@@ -1,0 +1,51 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bot/**"
+      - ".github/workflows/go.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "bot/**"
+      - ".github/workflows/go.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot
+    strategy:
+      matrix:
+        go-version: ["1.27"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: bot/go.sum
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck
+        run: staticcheck ./...
+
+      - name: Run tests
+        run: go test -race -vet=off ./...

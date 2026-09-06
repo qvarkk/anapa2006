@@ -3,8 +3,15 @@ package i18n
 import "testing"
 
 var allSimpleKeys = []Key{
+	KeyCommandStart,
+
 	KeyStart,
 	KeyNoAccess,
+	KeyUnrecognized,
+
+	KeyBtnOpenMenu,
+	KeyBtnNewPosts,
+	KeyBtnScheduled,
 }
 
 var allPluralKeys = []PluralKey{

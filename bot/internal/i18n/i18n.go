@@ -29,8 +29,15 @@ type PluralKey string
 // AND ADD IT TO THE TEST
 // !!!
 const (
-	KeyStart    Key = "start"
-	KeyNoAccess Key = "no_access"
+	KeyCommandStart Key = "start_command_description"
+
+	KeyStart        Key = "start"
+	KeyNoAccess     Key = "no_access"
+	KeyUnrecognized Key = "unrecognized_command"
+
+	KeyBtnOpenMenu  Key = "btn_open_menu"
+	KeyBtnNewPosts  Key = "btn_new_posts"
+	KeyBtnScheduled Key = "btn_scheduled"
 )
 
 // !!!

@@ -10,12 +10,11 @@ import (
 	"qq/anapa2006/internal/logger"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram"
-
-	"github.com/go-telegram/bot"
+	"syscall"
 )
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	cfg, err := config.LoadConfig()
@@ -36,30 +35,17 @@ func main() {
 	}
 	defer st.Close()
 
-	ms := telegram.NewMiddlewareStore(st)
-	hs := telegram.NewHandlerStore(st)
-
-	opts := []bot.Option{
-		bot.WithMiddlewares(ms.RequireAllowedMiddleware),
-		bot.WithDefaultHandler(hs.DefaultHandler),
-	}
-
 	slog.Info("starting bot...")
-	b, err := bot.New(cfg.TelegramBotToken, opts...)
+	b, err := telegram.New(ctx, cfg.TelegramBotToken, st)
 	if err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
-			"couldn't start bot",
+			"couldn't create bot",
 			slog.Any("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// TODO: remove
-	b.RegisterHandler(
-		bot.HandlerTypeMessageText, "/tmp",
-		bot.MatchTypeExact, hs.GiveAdminHandler,
-	)
-
 	slog.Info("bot started")
 	b.Start(ctx)
+	slog.Info("bot stopped")
 }

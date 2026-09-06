@@ -23,6 +23,6 @@ func NewSlogger(debug bool) *Slogger {
 	}
 
 	return &Slogger{
-		Logger: slog.New(slog.NewJSONHandler(os.Stdout, opts)),
+		Logger: slog.New(slog.NewTextHandler(os.Stdout, opts)),
 	}
 }

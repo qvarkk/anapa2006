@@ -12,6 +12,7 @@ import (
 type AllowedUser struct {
 	UserID   int64          `json:"user_id"`
 	Username sql.NullString `json:"username"`
+	Lang     string         `json:"lang"`
 	AddedAt  time.Time      `json:"added_at"`
 }
 

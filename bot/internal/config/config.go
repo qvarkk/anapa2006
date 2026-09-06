@@ -9,6 +9,8 @@ type Config struct {
 	Debug bool `default:"true"`
 
 	TelegramBotToken string `required:"true" envconfig:"TELEGRAM_BOT_TOKEN"`
+
+	DBPath string `default:"/var/opt/anapa2006/anapa2006.db" envconfig:"DB_PATH"`
 }
 
 func LoadConfig() (*Config, error) {

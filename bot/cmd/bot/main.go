@@ -8,43 +8,58 @@ import (
 	"os/signal"
 	"qq/anapa2006/internal/config"
 	"qq/anapa2006/internal/logger"
+	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram"
 
 	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	config, err := config.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("load config: %v", err)
 	}
 
-	logger := logger.NewSlogger(config.Debug)
+	logger := logger.NewSlogger(cfg.Debug)
+	slog.SetDefault(logger.Logger)
+
+	st, err := store.Open(cfg.DBPath)
+	if err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelError,
+			"couldn't create store",
+			slog.Any("error", err.Error()))
+		os.Exit(1)
+	}
+	defer st.Close()
+
+	ms := telegram.NewMiddlewareStore(st)
+	hs := telegram.NewHandlerStore(st)
 
 	opts := []bot.Option{
-		// TODO: add allowed users middleware; remove default handler
-		// bot.WithMiddlewares(nil),
-		bot.WithDefaultHandler(handler),
+		bot.WithMiddlewares(ms.RequireAllowedMiddleware),
+		bot.WithDefaultHandler(hs.DefaultHandler),
 	}
 
-	logger.Logger.Info("starting bot...")
-	b, err := bot.New(config.TelegramBotToken, opts...)
+	slog.Info("starting bot...")
+	b, err := bot.New(cfg.TelegramBotToken, opts...)
 	if err != nil {
-		logger.Logger.Error("start bot", slog.Any("error", err.Error()))
+		slog.LogAttrs(
+			ctx, slog.LevelError,
+			"couldn't start bot",
+			slog.Any("error", err.Error()))
 		os.Exit(1)
 	}
 
-	logger.Logger.Info("bot started")
-	b.Start(ctx)
-}
+	// TODO: remove
+	b.RegisterHandler(
+		bot.HandlerTypeMessageText, "/tmp",
+		bot.MatchTypeExact, hs.GiveAdminHandler,
+	)
 
-// TODO: remove temporary handler
-func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   update.Message.Text,
-	})
+	slog.Info("bot started")
+	b.Start(ctx)
 }

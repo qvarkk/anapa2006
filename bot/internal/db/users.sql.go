@@ -25,13 +25,19 @@ func (q *Queries) AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) 
 	return err
 }
 
-const isAllowedUser = `-- name: IsAllowedUser :one
-SELECT EXISTS(SELECT 1 FROM allowed_users WHERE user_id = ?) AS allowed
+const getAllowedUser = `-- name: GetAllowedUser :one
+SELECT user_id, username, lang FROM allowed_users WHERE user_id = ?
 `
 
-func (q *Queries) IsAllowedUser(ctx context.Context, userID int64) (bool, error) {
-	row := q.db.QueryRowContext(ctx, isAllowedUser, userID)
-	var allowed bool
-	err := row.Scan(&allowed)
-	return allowed, err
+type GetAllowedUserRow struct {
+	UserID   int64          `json:"user_id"`
+	Username sql.NullString `json:"username"`
+	Lang     string         `json:"lang"`
+}
+
+func (q *Queries) GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error) {
+	row := q.db.QueryRowContext(ctx, getAllowedUser, userID)
+	var i GetAllowedUserRow
+	err := row.Scan(&i.UserID, &i.Username, &i.Lang)
+	return i, err
 }

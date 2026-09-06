@@ -10,7 +10,7 @@ import (
 
 type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
-	IsAllowedUser(ctx context.Context, userID int64) (bool, error)
+	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }
 

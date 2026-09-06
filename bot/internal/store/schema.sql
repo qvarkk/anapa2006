@@ -1,8 +1,9 @@
 CREATE TABLE IF NOT EXISTS allowed_users (
   user_id INTEGER PRIMARY KEY,
-  username text,
+  username TEXT,
+  lang TEXT NOT NULL DEFAULT 'ru' CHECK (lang in ('ru')),
   added_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-)
+);
 
 CREATE TABLE IF NOT EXISTS sources (
   id INTEGER PRIMARY KEY,

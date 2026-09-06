@@ -1,0 +1,10 @@
+simple:
+  start: "👋 Привет, %s"
+  no_access: "⛔ У вас нет доступа к этому боту."
+
+plural:
+  new_posts_count:
+    one: "%d новый пост"
+    few: "%d новых поста"
+    many: "%d новых постов"
+    other: "%d новых постов"

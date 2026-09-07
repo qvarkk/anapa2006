@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"qq/anapa2006/internal/config"
+	"qq/anapa2006/internal/fetcher"
 	"qq/anapa2006/internal/logger"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram"
@@ -34,6 +35,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer st.Close()
+
+	fetcher := fetcher.NewFetcher(st, cfg.RsshubBaseUrl, nil)
+	go fetcher.Run(ctx, cfg.FetchInterval)
 
 	slog.Info("starting bot...")
 	b, err := telegram.New(ctx, cfg.TelegramBotToken, st)

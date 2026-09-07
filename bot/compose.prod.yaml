@@ -1,0 +1,3 @@
+services:
+  bot:
+    image: ghcr.io/qvarkk/anapa2006:latest

@@ -1,9 +1,20 @@
 services:
   bot:
-    build: .
     restart: unless-stopped
     environment:
-      - DEBUG=${DEBUG}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      DEBUG: ${DEBUG}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      RSSHUB_BASE_URL: ${RSSHUB_BASE_URL}
+      FETCH_INTERVAL: ${FETCH_INTERVAL}
     volumes:
-      - ./data:/app/data
+      - ./data:/var/opt/tmp/anapa2006
+
+  rsshub:
+    image: diygod/rsshub
+    restart: unless-stopped
+    ports:
+      - "1200:1200"
+    environment:
+      NODE_ENV: production
+      CACHE_TYPE: memory
+      TELEGRAM_TOKEN: ${TELEGRAM_BOT_TOKEN}

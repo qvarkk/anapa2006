@@ -38,6 +38,7 @@ func registerHandlers(b *bot.Bot) {
 }
 
 func setCommandsMenu(ctx context.Context, b *bot.Bot) error {
+	// TODO: localize for multiple languages (at least RU, EN)RU
 	_, err := b.SetMyCommands(ctx, &bot.SetMyCommandsParams{
 		Commands: []models.BotCommand{
 			{Command: string(commandStart), Description: i18n.T(i18n.DefaultLang, i18n.KeyCommandStart)},

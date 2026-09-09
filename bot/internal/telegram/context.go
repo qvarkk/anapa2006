@@ -11,7 +11,7 @@ const (
 	ctxKeyLang ctxKey = "lang"
 )
 
-func LangFromContext(ctx context.Context) i18n.Lang {
+func langFromContext(ctx context.Context) i18n.Lang {
 	if v, ok := ctx.Value(ctxKeyLang).(string); ok {
 		return i18n.ToLang(v)
 	}

@@ -12,14 +12,14 @@ import (
 func startMenuKeyboard(lang i18n.Lang) *models.InlineKeyboardMarkup {
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.KeyBtnNewPosts), CallbackData: string(callbackListNew)}},
+			{{Text: i18n.T(lang, i18n.KeyBtnNewPosts), CallbackData: string(callbackListFetched)}},
 			{{Text: i18n.T(lang, i18n.KeyBtnScheduled), CallbackData: string(callbackListScheduled)}},
 		},
 	}
 }
 
 func handleStartCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
-	lang := LangFromContext(ctx)
+	lang := langFromContext(ctx)
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
 		Text:        i18n.T(lang, i18n.KeyStart),
@@ -28,22 +28,14 @@ func handleStartCommand(ctx context.Context, b *bot.Bot, update *models.Update) 
 }
 
 func handleOpenMenuCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
-	if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-	}); err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelWarn,
-			"answer callback query failed",
-			slog.String("error", err.Error()),
-		)
-	}
+	ackCallback(ctx, b, update)
 
-	lang := LangFromContext(ctx)
-	msg := update.CallbackQuery.Message.Message
+	lang := langFromContext(ctx)
+	chatID, msgID := callbackTarget(update)
 
 	_, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID:      msg.Chat.ID,
-		MessageID:   msg.ID,
+		ChatID:      chatID,
+		MessageID:   msgID,
 		Text:        i18n.T(lang, i18n.KeyStart),
 		ReplyMarkup: startMenuKeyboard(lang),
 	})
@@ -51,8 +43,8 @@ func handleOpenMenuCallback(ctx context.Context, b *bot.Bot, update *models.Upda
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"edit message to start menu failed",
-			slog.Int64("chat_id", msg.Chat.ID),
-			slog.Int("message_id", msg.ID),
+			slog.Int64("chat_id", chatID),
+			slog.Int("message_id", msgID),
 			slog.String("error", err.Error()),
 		)
 	}
@@ -69,7 +61,7 @@ func handleDefault(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	lang := LangFromContext(ctx)
+	lang := langFromContext(ctx)
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{{Text: i18n.T(lang, i18n.KeyBtnOpenMenu), CallbackData: string(callbackOpenMenu)}},
@@ -83,12 +75,17 @@ func handleDefault(ctx context.Context, b *bot.Bot, update *models.Update) {
 	})
 }
 
-func chatIDFromUpdate(update *models.Update) (int64, bool) {
-	if update.Message != nil {
-		return update.Message.Chat.ID, true
+func handleNoop(ctx context.Context, b *bot.Bot, update *models.Update) {
+	lang := langFromContext(ctx)
+	if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		Text:            i18n.T(lang, i18n.KeyFeatureUnavailable),
+		ShowAlert:       true,
+	}); err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelWarn,
+			"answer noop callback failed",
+			slog.String("error", err.Error()),
+		)
 	}
-	if update.CallbackQuery != nil && update.CallbackQuery.Message.Message != nil {
-		return update.CallbackQuery.Message.Message.Chat.ID, true
-	}
-	return 0, false
 }

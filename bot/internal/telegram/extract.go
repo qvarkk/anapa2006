@@ -40,3 +40,18 @@ func extractIdentity(update *models.Update) (userID int64, chatID int64, ok bool
 		return 0, 0, false
 	}
 }
+
+func chatIDFromUpdate(update *models.Update) (int64, bool) {
+	if update.Message != nil {
+		return update.Message.Chat.ID, true
+	}
+	if update.CallbackQuery != nil && update.CallbackQuery.Message.Message != nil {
+		return update.CallbackQuery.Message.Message.Chat.ID, true
+	}
+	return 0, false
+}
+
+func callbackTarget(update *models.Update) (chatID int64, messageID int) {
+	msg := update.CallbackQuery.Message.Message
+	return msg.Chat.ID, msg.ID
+}

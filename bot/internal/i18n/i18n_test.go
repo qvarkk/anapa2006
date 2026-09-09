@@ -8,14 +8,36 @@ var allSimpleKeys = []Key{
 	KeyStart,
 	KeyNoAccess,
 	KeyUnrecognized,
+	KeyFeatureUnavailable,
+
+	KeyBtnBack,
+	KeyBtnSelectPost,
+	KeyBtnUse,
+	KeyBtnEdit,
+	KeyBtnSkip,
 
 	KeyBtnOpenMenu,
 	KeyBtnNewPosts,
 	KeyBtnScheduled,
+
+	KeyPostStatusNew,
+	KeyPostStatusSkipped,
+	KeyPostStatusReviewing,
+	KeyPostStatusArchived,
+
+	KeyListFetchedMenuTitle,
+	KeyListFetchedChannelTitle,
+
+	KeyBtnFetchedByChannel,
+	KeyBtnFetchedLatest,
+
+	KeyPostListHeader,
+	KeyPostListEntry,
+	KeyPostDetail,
 }
 
 var allPluralKeys = []PluralKey{
-	KeyNewPostsCount,
+	KeyChannelNewCount,
 }
 
 func TestLocalesCompleteness(t *testing.T) {

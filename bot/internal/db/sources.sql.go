@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countSources = `-- name: CountSources :one
+SELECT COUNT(*) FROM sources
+`
+
+func (q *Queries) CountSources(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countSources)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createSource = `-- name: CreateSource :one
 INSERT INTO sources (channel_handle, active) VALUES (?, ?) RETURNING id, channel_handle, active
 `
@@ -39,6 +50,50 @@ func (q *Queries) GetActiveSources(ctx context.Context) ([]Source, error) {
 	for rows.Next() {
 		var i Source
 		if err := rows.Scan(&i.ID, &i.ChannelHandle, &i.Active); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSourcesWithNewCount = `-- name: ListSourcesWithNewCount :many
+SELECT s.id, s.channel_handle,
+  CAST(COALESCE(SUM(CASE WHEN p.status = 'new' THEN 1 ELSE 0 END), 0) AS INTEGER) AS new_count
+FROM sources s
+LEFT JOIN posts p ON p.source_id = s.id
+GROUP BY s.id, s.channel_handle
+ORDER BY s.channel_handle
+LIMIT ? OFFSET ?
+`
+
+type ListSourcesWithNewCountParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListSourcesWithNewCountRow struct {
+	ID            int64  `json:"id"`
+	ChannelHandle string `json:"channel_handle"`
+	NewCount      int64  `json:"new_count"`
+}
+
+func (q *Queries) ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error) {
+	rows, err := q.db.QueryContext(ctx, listSourcesWithNewCount, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSourcesWithNewCountRow
+	for rows.Next() {
+		var i ListSourcesWithNewCountRow
+		if err := rows.Scan(&i.ID, &i.ChannelHandle, &i.NewCount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

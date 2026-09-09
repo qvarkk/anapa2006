@@ -11,10 +11,18 @@ import (
 type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
 	AddPostMedia(ctx context.Context, arg AddPostMediaParams) (PostMedium, error)
+	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
+	CountPosts(ctx context.Context) (int64, error)
+	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
+	CountSources(ctx context.Context) (int64, error)
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
+	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
+	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
+	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
+	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }
 

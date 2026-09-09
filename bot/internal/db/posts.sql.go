@@ -8,7 +8,175 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
+
+const countPosts = `-- name: CountPosts :one
+SELECT COUNT(*) FROM posts
+`
+
+func (q *Queries) CountPosts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPosts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPostsBySource = `-- name: CountPostsBySource :one
+SELECT COUNT(*) FROM posts WHERE source_id = ?
+`
+
+func (q *Queries) CountPostsBySource(ctx context.Context, sourceID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPostsBySource, sourceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getPostWithSource = `-- name: GetPostWithSource :one
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+JOIN sources s ON s.id = p.source_id
+WHERE p.id = ?
+`
+
+type GetPostWithSourceRow struct {
+	ID            int64        `json:"id"`
+	SourceID      int64        `json:"source_id"`
+	ExternalID    string       `json:"external_id"`
+	RawText       string       `json:"raw_text"`
+	PublishedAt   sql.NullTime `json:"published_at"`
+	FetchedAt     time.Time    `json:"fetched_at"`
+	Status        string       `json:"status"`
+	ChannelHandle string       `json:"channel_handle"`
+}
+
+func (q *Queries) GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error) {
+	row := q.db.QueryRowContext(ctx, getPostWithSource, id)
+	var i GetPostWithSourceRow
+	err := row.Scan(
+		&i.ID,
+		&i.SourceID,
+		&i.ExternalID,
+		&i.RawText,
+		&i.PublishedAt,
+		&i.FetchedAt,
+		&i.Status,
+		&i.ChannelHandle,
+	)
+	return i, err
+}
+
+const listPostsBySource = `-- name: ListPostsBySource :many
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+JOIN sources s ON s.id = p.source_id
+WHERE p.source_id = ?
+ORDER BY p.published_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListPostsBySourceParams struct {
+	SourceID int64 `json:"source_id"`
+	Limit    int64 `json:"limit"`
+	Offset   int64 `json:"offset"`
+}
+
+type ListPostsBySourceRow struct {
+	ID            int64        `json:"id"`
+	SourceID      int64        `json:"source_id"`
+	ExternalID    string       `json:"external_id"`
+	RawText       string       `json:"raw_text"`
+	PublishedAt   sql.NullTime `json:"published_at"`
+	FetchedAt     time.Time    `json:"fetched_at"`
+	Status        string       `json:"status"`
+	ChannelHandle string       `json:"channel_handle"`
+}
+
+func (q *Queries) ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostsBySource, arg.SourceID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPostsBySourceRow
+	for rows.Next() {
+		var i ListPostsBySourceRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SourceID,
+			&i.ExternalID,
+			&i.RawText,
+			&i.PublishedAt,
+			&i.FetchedAt,
+			&i.Status,
+			&i.ChannelHandle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPostsLatest = `-- name: ListPostsLatest :many
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+JOIN sources s ON s.id = p.source_id
+ORDER BY p.published_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListPostsLatestParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListPostsLatestRow struct {
+	ID            int64        `json:"id"`
+	SourceID      int64        `json:"source_id"`
+	ExternalID    string       `json:"external_id"`
+	RawText       string       `json:"raw_text"`
+	PublishedAt   sql.NullTime `json:"published_at"`
+	FetchedAt     time.Time    `json:"fetched_at"`
+	Status        string       `json:"status"`
+	ChannelHandle string       `json:"channel_handle"`
+}
+
+func (q *Queries) ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostsLatest, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPostsLatestRow
+	for rows.Next() {
+		var i ListPostsLatestRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SourceID,
+			&i.ExternalID,
+			&i.RawText,
+			&i.PublishedAt,
+			&i.FetchedAt,
+			&i.Status,
+			&i.ChannelHandle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const upsertPost = `-- name: UpsertPost :one
 INSERT INTO posts (source_id, external_id, raw_text, published_at)

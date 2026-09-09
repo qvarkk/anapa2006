@@ -3,3 +3,6 @@ INSERT INTO post_media (post_id, kind, url, position) VALUES (?, ?, ?, ?) RETURN
 
 -- name: ListPostMedia :many
 SELECT * FROM post_media WHERE post_id = ? ORDER BY position ASC;
+
+-- name: CountMediaKindsByPost :many
+SELECT kind, COUNT(*) AS cnt FROM post_media WHERE post_id = ? GROUP BY kind;

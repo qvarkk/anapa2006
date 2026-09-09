@@ -38,6 +38,38 @@ func (q *Queries) AddPostMedia(ctx context.Context, arg AddPostMediaParams) (Pos
 	return i, err
 }
 
+const countMediaKindsByPost = `-- name: CountMediaKindsByPost :many
+SELECT kind, COUNT(*) AS cnt FROM post_media WHERE post_id = ? GROUP BY kind
+`
+
+type CountMediaKindsByPostRow struct {
+	Kind string `json:"kind"`
+	Cnt  int64  `json:"cnt"`
+}
+
+func (q *Queries) CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error) {
+	rows, err := q.db.QueryContext(ctx, countMediaKindsByPost, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountMediaKindsByPostRow
+	for rows.Next() {
+		var i CountMediaKindsByPostRow
+		if err := rows.Scan(&i.Kind, &i.Cnt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPostMedia = `-- name: ListPostMedia :many
 SELECT id, post_id, kind, url, position FROM post_media WHERE post_id = ? ORDER BY position ASC
 `

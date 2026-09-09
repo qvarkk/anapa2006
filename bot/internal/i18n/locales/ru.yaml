@@ -1,6 +1,6 @@
 simple:
   start_command_description: "Открыть главное меню"
-
+  #
   start: |
     👋 Доброго времени суток
 
@@ -12,14 +12,36 @@ simple:
     🚧 Или вы наткнулись на раздел, который находится в разработке
 
     Для начала работы напишите /start или нажмите на кнопку снизу
-
+  feature_unavailable: "Эта функция недоступна."
+  #
+  btn_back: "⬅️ Назад"
+  btn_select_post: "📌 %[1]d. ID %[2]d"
+  btn_use: "▶️ Использовать"
+  btn_edit: "📝 Редактировать"
+  btn_skip: "🗑️ Скип"
+  #
   btn_open_menu: "📃 Открыть меню"
   btn_new_posts: "🆕 Новые посты"
   btn_scheduled: "🕒 Отложенные посты"
+  #
+  post_status_new: "новый"
+  post_status_skipped: "пропущен"
+  post_status_reviewing: "в обработке"
+  post_status_archived: "архив"
+  #
+  list_fetched_menu_title: "Спизженные посты:"
+  list_fetched_channel_title: "Каналы:"
+  #
+  btn_fetched_by_channel: "📚 По каналам"
+  btn_fetched_latest: "🕓 Последние"
+  #
+  post_list_header: "Посты (%[1]d–%[2]d из %[3]d):"
+  post_list_entry: "#%[1]d | %[2]s | %[3]s | %[4]s\n%[5]s\n%[6]s"
+  post_detail: "Канал: %[1]s\nДата: %[2]s\nСтатус: %[3]s\nВложения: %[4]s\n\n%[5]s"
 
 plural:
-  new_posts_count:
-    one: "%d новый пост"
-    few: "%d новых поста"
-    many: "%d новых постов"
-    other: "%d новых постов"
+  channel_new_count:
+    one: "%[2]s — %[1]d новый пост"
+    few: "%[2]s — %[1]d новых поста"
+    many: "%[2]s — %[1]d новых постов"
+    other: "%[2]s — %[1]d новых постов"

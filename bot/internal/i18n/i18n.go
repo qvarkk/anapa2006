@@ -29,15 +29,45 @@ type PluralKey string
 // AND ADD IT TO THE TEST
 // !!!
 const (
+	// Command desciptions
 	KeyCommandStart Key = "start_command_description"
 
-	KeyStart        Key = "start"
-	KeyNoAccess     Key = "no_access"
-	KeyUnrecognized Key = "unrecognized_command"
+	// Common titles
+	KeyStart              Key = "start"
+	KeyNoAccess           Key = "no_access"
+	KeyUnrecognized       Key = "unrecognized_command"
+	KeyFeatureUnavailable Key = "feature_unavailable"
 
+	// Common buttons
+	KeyBtnBack       Key = "btn_back"
+	KeyBtnSelectPost Key = "btn_select_post"
+	KeyBtnUse        Key = "btn_use"
+	KeyBtnEdit       Key = "btn_edit"
+	KeyBtnSkip       Key = "btn_skip"
+
+	// Start menu buttons
 	KeyBtnOpenMenu  Key = "btn_open_menu"
 	KeyBtnNewPosts  Key = "btn_new_posts"
 	KeyBtnScheduled Key = "btn_scheduled"
+
+	// Posts statuses
+	KeyPostStatusNew       Key = "post_status_new"
+	KeyPostStatusSkipped   Key = "post_status_skipped"
+	KeyPostStatusReviewing Key = "post_status_reviewing"
+	KeyPostStatusArchived  Key = "post_status_archived"
+
+	// List fetched titles
+	KeyListFetchedMenuTitle    Key = "list_fetched_menu_title"
+	KeyListFetchedChannelTitle Key = "list_fetched_channel_title"
+
+	// List fetched buttons
+	KeyBtnFetchedByChannel Key = "btn_fetched_by_channel"
+	KeyBtnFetchedLatest    Key = "btn_fetched_latest"
+
+	// Post lists
+	KeyPostListHeader Key = "post_list_header"
+	KeyPostListEntry  Key = "post_list_entry"
+	KeyPostDetail     Key = "post_detail"
 )
 
 // !!!
@@ -46,7 +76,7 @@ const (
 // AND ADD IT TO THE TEST
 // !!!
 const (
-	KeyNewPostsCount PluralKey = "new_posts_count"
+	KeyChannelNewCount PluralKey = "channel_new_count"
 )
 
 const (

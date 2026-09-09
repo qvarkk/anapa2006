@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/store"
+	"strings"
 	"time"
 )
 
@@ -77,7 +78,6 @@ func (f *Fetcher) Tick(ctx context.Context) {
 	}
 }
 
-// TODO: strip text of metadata and extract media.
 func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 	url := f.getRsshubChannelFeedUrl(src.ChannelHandle)
 	resp, err := f.pull(ctx, url)
@@ -86,10 +86,26 @@ func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 	}
 
 	for _, item := range resp.Items {
+		if isSystemMessage(item) {
+			continue
+		}
+
+		caption, media, err := ParseDescription(item.Description)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"parse description",
+				slog.String("channel", src.ChannelHandle),
+				slog.String("guid", item.GUID),
+				slog.String("error", err.Error()),
+			)
+		}
+		caption = resolveCaption(item, caption, media)
+
 		post, err := f.store.UpsertPost(ctx, db.UpsertPostParams{
 			SourceID:   src.ID,
 			ExternalID: item.GUID,
-			RawText:    item.Description,
+			RawText:    caption,
 			PublishedAt: sql.NullTime{
 				Time:  item.PublishedAt.Time,
 				Valid: true,
@@ -109,6 +125,26 @@ func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 			)
 			continue
 		}
+
+		for i, m := range media {
+			if m.URL == "" {
+				continue
+			}
+			if _, err := f.store.AddPostMedia(ctx, db.AddPostMediaParams{
+				PostID:   post.ID,
+				Kind:     string(m.MediaType),
+				Url:      m.URL,
+				Position: int64(i),
+			}); err != nil {
+				slog.LogAttrs(
+					ctx, slog.LevelError,
+					"add post media",
+					slog.Int64("post_id", post.ID),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
+
 		slog.LogAttrs(
 			ctx, slog.LevelInfo,
 			"new post fetched",
@@ -144,4 +180,20 @@ func (f *Fetcher) pullChannelFeed(ctx context.Context, url string) (*RSSResponse
 
 func (f *Fetcher) getRsshubChannelFeedUrl(handle string) string {
 	return f.rsshubUrl.JoinPath(RsshubTelegramPath, handle).String()
+}
+
+func resolveCaption(item RSSItem, parsed string, media []MediaItem) string {
+	if parsed != "" {
+		return parsed
+	}
+	for _, m := range media {
+		if m.MediaType == MediaTypeDocument {
+			return item.Title
+		}
+	}
+	return ""
+}
+
+func isSystemMessage(item RSSItem) bool {
+	return strings.HasPrefix(strings.TrimSpace(item.Title), "🔧")
 }

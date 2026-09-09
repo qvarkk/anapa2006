@@ -17,6 +17,7 @@ type RSSResponse struct {
 }
 
 type RSSItem struct {
+	Title       string      `xml:"title"`
 	Description string      `xml:"description"`
 	GUID        string      `xml:"guid"`
 	PublishedAt RSSDateTime `xml:"pubDate"`

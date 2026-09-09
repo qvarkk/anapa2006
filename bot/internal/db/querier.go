@@ -10,9 +10,11 @@ import (
 
 type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
+	AddPostMedia(ctx context.Context, arg AddPostMediaParams) (PostMedium, error)
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
+	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }
 

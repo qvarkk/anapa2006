@@ -34,7 +34,7 @@ func requireAllowed(st *store.Store) bot.Middleware {
 
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID,
-					Text:   i18n.T(lang, i18n.KeyNoAccess),
+					Text:   i18n.T(lang, i18n.NoAccess),
 				})
 				return
 			}

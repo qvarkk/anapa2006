@@ -11,24 +11,22 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-// TODO: remove, just string everywhere, whatever
-type callbackAction string
-
 const (
-	callbackNoop callbackAction = "noop"
+	noop      string = "noop"
+	firstPage string = "page:first"
+	lastPage  string = "page:last"
 
-	callbackOpenMenu callbackAction = "menu:open"
+	menu string = "menu:open"
 
-	callbackListFetched   callbackAction = "list:fetched"
-	callbackListScheduled callbackAction = "list:scheduled"
+	fetch    string = "list:fetched"
+	schedule string = "list:scheduled"
 
-	callbackListFetchedByGroups callbackAction = "grp:p:%d"
-	callbackListFetchedLatest   callbackAction = "lat:%d"
+	fetchLatest string = "lat:%d"
 
-	callbackLatestPostDetail callbackAction = "post:%d:%s"
+	fetchChannels     string = "grp:p:%d"
+	fetchChannelPosts string = "grp:c:%d:%d:%d"
 
-	callbackListFetchedGroups     callbackAction = "grp:p:%d"
-	callbackListFetchedGroupPosts callbackAction = "grp:c:%d:%d:%d"
+	fetchPost string = "post:%d:%s"
 )
 
 func ackCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -52,9 +50,10 @@ func parseIntCallbackPart(data string, idx int) int {
 	return n
 }
 
-func encodeCallback(action callbackAction, args ...any) string {
+// Little helper to get callback w/ format
+func format(cb string, args ...any) string {
 	if len(args) == 0 {
-		return string(action)
+		return cb
 	}
-	return fmt.Sprintf(string(action), args...)
+	return fmt.Sprintf(cb, args...)
 }

@@ -3,41 +3,41 @@ package i18n
 import "testing"
 
 var allSimpleKeys = []Key{
-	KeyCommandStart,
+	CommandStart,
 
-	KeyStart,
-	KeyNoAccess,
-	KeyUnrecognized,
-	KeyFeatureUnavailable,
+	Start,
+	NoAccess,
+	Unrecognized,
+	FeatureUnavailable,
 
-	KeyBtnBack,
-	KeyBtnSelectPost,
-	KeyBtnUse,
-	KeyBtnEdit,
-	KeyBtnSkip,
+	BtnBack,
+	BtnSelectPost,
+	BtnUse,
+	BtnEdit,
+	BtnSkip,
 
-	KeyBtnOpenMenu,
-	KeyBtnNewPosts,
-	KeyBtnScheduled,
+	BtnOpenMenu,
+	BtnNewPosts,
+	BtnScheduled,
 
-	KeyPostStatusNew,
-	KeyPostStatusSkipped,
-	KeyPostStatusReviewing,
-	KeyPostStatusArchived,
+	PostStatusNew,
+	PostStatusSkipped,
+	PostStatusReviewing,
+	PostStatusArchived,
 
-	KeyListFetchedMenuTitle,
-	KeyListFetchedChannelTitle,
+	FetchMenu,
+	FetchChannelsMenu,
 
-	KeyBtnFetchedByChannel,
-	KeyBtnFetchedLatest,
+	BtnFetchChannels,
+	BtnFetchLatest,
 
-	KeyPostListHeader,
-	KeyPostListEntry,
-	KeyPostDetail,
+	PostListHeader,
+	PostListEntry,
+	PostDetail,
 }
 
 var allPluralKeys = []PluralKey{
-	KeyChannelNewCount,
+	ChannelNewCount,
 }
 
 func TestLocalesCompleteness(t *testing.T) {

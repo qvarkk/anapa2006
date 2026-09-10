@@ -12,8 +12,8 @@ import (
 func startMenuKeyboard(lang i18n.Lang) *models.InlineKeyboardMarkup {
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.KeyBtnNewPosts), CallbackData: string(callbackListFetched)}},
-			{{Text: i18n.T(lang, i18n.KeyBtnScheduled), CallbackData: string(callbackListScheduled)}},
+			{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: string(fetch)}},
+			{{Text: i18n.T(lang, i18n.BtnScheduled), CallbackData: string(schedule)}},
 		},
 	}
 }
@@ -22,7 +22,7 @@ func handleStartCommand(ctx context.Context, b *bot.Bot, update *models.Update) 
 	lang := langFromContext(ctx)
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
-		Text:        i18n.T(lang, i18n.KeyStart),
+		Text:        i18n.T(lang, i18n.Start),
 		ReplyMarkup: startMenuKeyboard(lang),
 	})
 }
@@ -36,7 +36,7 @@ func handleOpenMenuCallback(ctx context.Context, b *bot.Bot, update *models.Upda
 	_, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID:      chatID,
 		MessageID:   msgID,
-		Text:        i18n.T(lang, i18n.KeyStart),
+		Text:        i18n.T(lang, i18n.Start),
 		ReplyMarkup: startMenuKeyboard(lang),
 	})
 	if err != nil {
@@ -64,13 +64,13 @@ func handleDefault(ctx context.Context, b *bot.Bot, update *models.Update) {
 	lang := langFromContext(ctx)
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.KeyBtnOpenMenu), CallbackData: string(callbackOpenMenu)}},
+			{{Text: i18n.T(lang, i18n.BtnOpenMenu), CallbackData: string(menu)}},
 		},
 	}
 
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      chatID,
-		Text:        i18n.T(lang, i18n.KeyUnrecognized),
+		Text:        i18n.T(lang, i18n.Unrecognized),
 		ReplyMarkup: kb,
 	})
 }
@@ -79,7 +79,7 @@ func handleNoop(ctx context.Context, b *bot.Bot, update *models.Update) {
 	lang := langFromContext(ctx)
 	if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: update.CallbackQuery.ID,
-		Text:            i18n.T(lang, i18n.KeyFeatureUnavailable),
+		Text:            i18n.T(lang, i18n.FeatureUnavailable),
 		ShowAlert:       true,
 	}); err != nil {
 		slog.LogAttrs(

@@ -30,44 +30,46 @@ type PluralKey string
 // !!!
 const (
 	// Command desciptions
-	KeyCommandStart Key = "start_command_description"
+	CommandStart Key = "start_command_description"
 
 	// Common titles
-	KeyStart              Key = "start"
-	KeyNoAccess           Key = "no_access"
-	KeyUnrecognized       Key = "unrecognized_command"
-	KeyFeatureUnavailable Key = "feature_unavailable"
+	Start              Key = "start"
+	NoAccess           Key = "no_access"
+	Unrecognized       Key = "unrecognized_command"
+	FeatureUnavailable Key = "feature_unavailable"
+	FirstPage          Key = "first_page"
+	LastPage           Key = "last_page"
 
 	// Common buttons
-	KeyBtnBack       Key = "btn_back"
-	KeyBtnSelectPost Key = "btn_select_post"
-	KeyBtnUse        Key = "btn_use"
-	KeyBtnEdit       Key = "btn_edit"
-	KeyBtnSkip       Key = "btn_skip"
+	BtnBack       Key = "btn_back"
+	BtnSelectPost Key = "btn_select_post"
+	BtnUse        Key = "btn_use"
+	BtnEdit       Key = "btn_edit"
+	BtnSkip       Key = "btn_skip"
 
 	// Start menu buttons
-	KeyBtnOpenMenu  Key = "btn_open_menu"
-	KeyBtnNewPosts  Key = "btn_new_posts"
-	KeyBtnScheduled Key = "btn_scheduled"
+	BtnOpenMenu  Key = "btn_open_menu"
+	BtnNewPosts  Key = "btn_new_posts"
+	BtnScheduled Key = "btn_scheduled"
 
 	// Posts statuses
-	KeyPostStatusNew       Key = "post_status_new"
-	KeyPostStatusSkipped   Key = "post_status_skipped"
-	KeyPostStatusReviewing Key = "post_status_reviewing"
-	KeyPostStatusArchived  Key = "post_status_archived"
+	PostStatusNew       Key = "post_status_new"
+	PostStatusSkipped   Key = "post_status_skipped"
+	PostStatusReviewing Key = "post_status_reviewing"
+	PostStatusArchived  Key = "post_status_archived"
 
 	// List fetched titles
-	KeyListFetchedMenuTitle    Key = "list_fetched_menu_title"
-	KeyListFetchedChannelTitle Key = "list_fetched_channel_title"
+	FetchMenu         Key = "list_fetched_menu_title"
+	FetchChannelsMenu Key = "list_fetched_channel_title"
 
 	// List fetched buttons
-	KeyBtnFetchedByChannel Key = "btn_fetched_by_channel"
-	KeyBtnFetchedLatest    Key = "btn_fetched_latest"
+	BtnFetchChannels Key = "btn_fetched_by_channel"
+	BtnFetchLatest   Key = "btn_fetched_latest"
 
 	// Post lists
-	KeyPostListHeader Key = "post_list_header"
-	KeyPostListEntry  Key = "post_list_entry"
-	KeyPostDetail     Key = "post_detail"
+	PostListHeader Key = "post_list_header"
+	PostListEntry  Key = "post_list_entry"
+	PostDetail     Key = "post_detail"
 )
 
 // !!!
@@ -76,7 +78,7 @@ const (
 // AND ADD IT TO THE TEST
 // !!!
 const (
-	KeyChannelNewCount PluralKey = "channel_new_count"
+	ChannelNewCount PluralKey = "channel_new_count"
 )
 
 const (

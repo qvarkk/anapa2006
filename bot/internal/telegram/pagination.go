@@ -1,10 +1,37 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
+	"qq/anapa2006/internal/i18n"
 
+	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
+
+func handleFirstPage(ctx context.Context, b *bot.Bot, update *models.Update) {
+	handleIncorrectPage(ctx, b, update, i18n.FirstPage)
+
+}
+
+func handleLastPage(ctx context.Context, b *bot.Bot, update *models.Update) {
+	handleIncorrectPage(ctx, b, update, i18n.LastPage)
+}
+
+func handleIncorrectPage(ctx context.Context, b *bot.Bot, update *models.Update, message i18n.Key) {
+	lang := langFromContext(ctx)
+	if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		Text:            i18n.T(lang, message),
+	}); err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelWarn,
+			"answer incorrect page callback failed",
+			slog.String("error", err.Error()),
+		)
+	}
+}
 
 func totalPages(total, pageSize int) int {
 	if total == 0 {

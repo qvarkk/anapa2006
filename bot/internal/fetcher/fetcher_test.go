@@ -27,7 +27,7 @@ func TestTick_DedupsAcrossRuns(t *testing.T) {
 
 	var notified []db.Post
 	url, _ := url.Parse("http://fake.invalid")
-	f := NewFetcher(st, url, func(_ context.Context, p db.Post) {
+	f := NewFetcher(st, url, nil, func(_ context.Context, p db.Post) {
 		notified = append(notified, p)
 	})
 
@@ -61,7 +61,7 @@ func TestTick_MultipleNewItemsInOneFeed(t *testing.T) {
 
 	var notified []db.Post
 	url, _ := url.Parse("http://fake.invalid")
-	f := NewFetcher(st, url, func(_ context.Context, p db.Post) {
+	f := NewFetcher(st, url, nil, func(_ context.Context, p db.Post) {
 		notified = append(notified, p)
 	})
 	f.pull = func(_ context.Context, _ string) (*RSSResponse, error) {

@@ -54,20 +54,21 @@ type Post struct {
 }
 
 type PostMedium struct {
-	ID       int64  `json:"id"`
-	PostID   int64  `json:"post_id"`
-	Kind     string `json:"kind"`
-	Url      string `json:"url"`
-	Position int64  `json:"position"`
+	ID       int64          `json:"id"`
+	PostID   int64          `json:"post_id"`
+	Kind     string         `json:"kind"`
+	Url      string         `json:"url"`
+	FileID   sql.NullString `json:"file_id"`
+	Position int64          `json:"position"`
 }
 
 type Schedule struct {
-	ID           int64       `json:"id"`
-	DraftID      int64       `json:"draft_id"`
-	TargetChatID int64       `json:"target_chat_id"`
-	ScheduledAt  time.Time   `json:"scheduled_at"`
-	Status       string      `json:"status"`
-	S            interface{} `json:"s"`
+	ID           int64        `json:"id"`
+	DraftID      int64        `json:"draft_id"`
+	TargetChatID int64        `json:"target_chat_id"`
+	ScheduledAt  time.Time    `json:"scheduled_at"`
+	Status       string       `json:"status"`
+	SentAt       sql.NullTime `json:"sent_at"`
 }
 
 type Source struct {

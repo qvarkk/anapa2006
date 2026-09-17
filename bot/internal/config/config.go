@@ -13,11 +13,15 @@ type Config struct {
 
 	TelegramBotToken string `required:"true" envconfig:"TELEGRAM_BOT_TOKEN"`
 
+	TelegramCacheChannelChatID int64 `required:"true" envconfig:"TELEGRAM_CACHE_CHANNEL_CHAT_ID"`
+
 	DBPath string `default:"/var/opt/anapa2006/anapa2006.db" envconfig:"DB_PATH"`
 
 	RsshubBaseUrl *url.URL `default:"http://rsshub:1200" envconfig:"RSSHUB_BASE_URL"`
 
 	FetchInterval time.Duration `default:"15m" envconfig:"FETCH_INTERVAL"`
+
+	PostInterval time.Duration `default:"1m" envconfig:"POST_INTERVAL"`
 }
 
 func LoadConfig() (*Config, error) {

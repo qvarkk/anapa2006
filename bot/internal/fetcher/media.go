@@ -1,18 +1,11 @@
 package fetcher
 
 import (
+	"qq/anapa2006/internal/domain"
 	"strings"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-)
-
-type MediaType string
-
-const (
-	MediaTypePhoto    MediaType = "photo"
-	MediaTypeVideo    MediaType = "video"
-	MediaTypeDocument MediaType = "document"
 )
 
 var telegramInlineTags = map[string]bool{
@@ -25,7 +18,7 @@ var telegramInlineTags = map[string]bool{
 
 type MediaItem struct {
 	URL       string
-	MediaType MediaType
+	MediaType domain.MediaKind
 }
 
 func ParseDescription(raw string) (captionHTML string, media []MediaItem, err error) {
@@ -53,14 +46,14 @@ func render(n *html.Node, sb *strings.Builder, media *[]MediaItem) {
 		switch {
 		case n.Data == "img":
 			if src := attr(n, "src"); src != "" {
-				*media = append(*media, MediaItem{MediaType: MediaTypePhoto, URL: src})
+				*media = append(*media, MediaItem{MediaType: domain.MediaKindPhoto, URL: src})
 			}
 		case n.Data == "video":
 			if src := attr(n, "src"); src != "" {
-				*media = append(*media, MediaItem{MediaType: MediaTypeVideo, URL: src})
+				*media = append(*media, MediaItem{MediaType: domain.MediaKindVideo, URL: src})
 			}
 		case n.Data == "blockquote":
-			*media = append(*media, MediaItem{MediaType: MediaTypeDocument, URL: ""})
+			*media = append(*media, MediaItem{MediaType: domain.MediaKindDocument, URL: ""})
 		case n.Data == "small":
 			// file-size annotations etc.
 		case n.Data == "p" || n.Data == "div":

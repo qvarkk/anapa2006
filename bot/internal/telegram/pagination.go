@@ -53,7 +53,7 @@ func clampPage(page, totalPages int) int {
 func buildPaginationRow(page, totalPages int, prevCallback, nextCallback string) []models.InlineKeyboardButton {
 	return []models.InlineKeyboardButton{
 		{Text: "⏪", CallbackData: prevCallback},
-		{Text: fmt.Sprintf("%d/%d", page+1, totalPages), CallbackData: "noop"},
+		{Text: fmt.Sprintf("%d/%d", page+1, totalPages), CallbackData: noop},
 		{Text: "⏩", CallbackData: nextCallback},
 	}
 }

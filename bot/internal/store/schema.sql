@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS post_media (
   kind TEXT NOT NULL 
     CHECK (kind IN ('photo', 'video', 'document')),
   url TEXT NOT NULL,
+  file_id TEXT,
   position INTEGER NOT NULL DEFAULT 0
 );
 
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS drafts (
   id INTEGER PRIMARY KEY,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE SET NULL,
   final_text TEXT NOT NULL,
-  user_id INTEGER NOT NULL REFERENCES allowed_users(id),
+  user_id INTEGER NOT NULL REFERENCES allowed_users(user_id),
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,7 +60,7 @@ CREATE TABLE IF NOT EXISTS schedule (
   target_chat_id INTEGER NOT NULL,
   scheduled_at DATETIME NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status in ('pending', 'sent', 'cancelled')),s
+    CHECK (status in ('pending', 'sending', 'sent', 'cancelled')),
   sent_at DATETIME
 );
 

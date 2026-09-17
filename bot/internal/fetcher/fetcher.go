@@ -10,36 +10,52 @@ import (
 	"net/http"
 	"net/url"
 	"qq/anapa2006/internal/db"
+	"qq/anapa2006/internal/domain"
 	"qq/anapa2006/internal/store"
 	"strings"
 	"time"
 )
 
-const HttpClientTimeout = 15 * time.Second
+const (
+	HttpClientTimeout = 15 * time.Second
+	DodgeSleepTimeout = 1200 * time.Millisecond
+)
+
+type MediaCacher interface {
+	CacheMedia(ctx context.Context, kind, url string) (fileID string, err error)
+}
 
 type NewPostCallbackFn func(ctx context.Context, post db.Post)
 
 type Fetcher struct {
-	store     *store.Store
-	rsshubUrl *url.URL
-	http      *http.Client
-	onNewPost NewPostCallbackFn
+	store       *store.Store
+	rsshubUrl   *url.URL
+	http        *http.Client
+	onNewPost   NewPostCallbackFn
+	mediaCacher MediaCacher
 
 	pull func(ctx context.Context, url string) (*RSSResponse, error)
 }
 
-func NewFetcher(store *store.Store, rsshubUrl *url.URL, onNewPost NewPostCallbackFn) *Fetcher {
+func NewFetcher(
+	store *store.Store,
+	rsshubUrl *url.URL,
+	mediaCacher MediaCacher,
+	onNewPost NewPostCallbackFn,
+) *Fetcher {
 	f := &Fetcher{
-		store:     store,
-		rsshubUrl: rsshubUrl,
-		http:      &http.Client{Timeout: HttpClientTimeout},
-		onNewPost: onNewPost,
+		store:       store,
+		rsshubUrl:   rsshubUrl,
+		mediaCacher: mediaCacher,
+		http:        &http.Client{Timeout: HttpClientTimeout},
+		onNewPost:   onNewPost,
 	}
 	f.pull = f.pullChannelFeed
 	return f
 }
 
 func (f *Fetcher) Run(ctx context.Context, interval time.Duration) {
+	slog.LogAttrs(ctx, slog.LevelInfo, "started fetcher")
 	f.Tick(ctx)
 	t := time.NewTicker(interval)
 	defer t.Stop()
@@ -126,24 +142,7 @@ func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 			continue
 		}
 
-		for i, m := range media {
-			if m.URL == "" {
-				continue
-			}
-			if _, err := f.store.AddPostMedia(ctx, db.AddPostMediaParams{
-				PostID:   post.ID,
-				Kind:     string(m.MediaType),
-				Url:      m.URL,
-				Position: int64(i),
-			}); err != nil {
-				slog.LogAttrs(
-					ctx, slog.LevelError,
-					"add post media",
-					slog.Int64("post_id", post.ID),
-					slog.String("error", err.Error()),
-				)
-			}
-		}
+		f.storeAndCacheMedia(ctx, post.ID, media)
 
 		slog.LogAttrs(
 			ctx, slog.LevelInfo,
@@ -182,12 +181,65 @@ func (f *Fetcher) getRsshubChannelFeedUrl(handle string) string {
 	return f.rsshubUrl.JoinPath(RsshubTelegramPath, handle).String()
 }
 
+func (f *Fetcher) storeAndCacheMedia(ctx context.Context, postID int64, media []MediaItem) {
+	for i, m := range media {
+		if m.URL == "" {
+			continue
+		}
+
+		row, err := f.store.AddPostMedia(ctx, db.AddPostMediaParams{
+			PostID: postID, Kind: string(m.MediaType), Url: m.URL, Position: int64(i),
+		})
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"add post media",
+				slog.Int64("post_id", postID),
+				slog.String("error", err.Error()),
+			)
+			continue
+		}
+
+		if f.mediaCacher == nil {
+			continue
+		}
+
+		if i > 0 {
+			time.Sleep(DodgeSleepTimeout)
+		}
+
+		fileID, err := f.mediaCacher.CacheMedia(ctx, string(m.MediaType), m.URL)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"cache media file_id failed - URL will eventually expire",
+				slog.Int64("post_id", postID),
+				slog.Int64("media_id", row.ID),
+				slog.String("kind", string(m.MediaType)),
+				slog.String("error", err.Error()),
+			)
+			continue
+		}
+
+		if err := f.store.SetPostMediaFileID(ctx, db.SetPostMediaFileIDParams{
+			ID: row.ID, FileID: sql.NullString{String: fileID, Valid: true},
+		}); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"set post media file_id",
+				slog.Int64("media_id", row.ID),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+}
+
 func resolveCaption(item RSSItem, parsed string, media []MediaItem) string {
 	if parsed != "" {
 		return parsed
 	}
 	for _, m := range media {
-		if m.MediaType == MediaTypeDocument {
+		if m.MediaType == domain.MediaKindDocument {
 			return item.Title
 		}
 	}

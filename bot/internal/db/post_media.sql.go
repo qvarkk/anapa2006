@@ -7,10 +7,11 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const addPostMedia = `-- name: AddPostMedia :one
-INSERT INTO post_media (post_id, kind, url, position) VALUES (?, ?, ?, ?) RETURNING id, post_id, kind, url, position
+INSERT INTO post_media (post_id, kind, url, position) VALUES (?, ?, ?, ?) RETURNING id, post_id, kind, url, file_id, position
 `
 
 type AddPostMediaParams struct {
@@ -33,6 +34,7 @@ func (q *Queries) AddPostMedia(ctx context.Context, arg AddPostMediaParams) (Pos
 		&i.PostID,
 		&i.Kind,
 		&i.Url,
+		&i.FileID,
 		&i.Position,
 	)
 	return i, err
@@ -71,7 +73,7 @@ func (q *Queries) CountMediaKindsByPost(ctx context.Context, postID int64) ([]Co
 }
 
 const listPostMedia = `-- name: ListPostMedia :many
-SELECT id, post_id, kind, url, position FROM post_media WHERE post_id = ? ORDER BY position ASC
+SELECT id, post_id, kind, url, file_id, position FROM post_media WHERE post_id = ? ORDER BY position ASC
 `
 
 func (q *Queries) ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error) {
@@ -88,6 +90,7 @@ func (q *Queries) ListPostMedia(ctx context.Context, postID int64) ([]PostMedium
 			&i.PostID,
 			&i.Kind,
 			&i.Url,
+			&i.FileID,
 			&i.Position,
 		); err != nil {
 			return nil, err
@@ -101,4 +104,18 @@ func (q *Queries) ListPostMedia(ctx context.Context, postID int64) ([]PostMedium
 		return nil, err
 	}
 	return items, nil
+}
+
+const setPostMediaFileID = `-- name: SetPostMediaFileID :exec
+UPDATE post_media SET file_id = ? WHERE id = ?
+`
+
+type SetPostMediaFileIDParams struct {
+	FileID sql.NullString `json:"file_id"`
+	ID     int64          `json:"id"`
+}
+
+func (q *Queries) SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error {
+	_, err := q.db.ExecContext(ctx, setPostMediaFileID, arg.FileID, arg.ID)
+	return err
 }

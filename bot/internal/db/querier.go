@@ -6,11 +6,13 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
 	AddPostMedia(ctx context.Context, arg AddPostMediaParams) (PostMedium, error)
+	ClaimDueSchedule(ctx context.Context, id int64) (Schedule, error)
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
 	CountPosts(ctx context.Context) (int64, error)
 	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
@@ -18,11 +20,17 @@ type Querier interface {
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
+	GetDraftByID(ctx context.Context, id int64) (Draft, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
+	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
+	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
+	MarkScheduleSent(ctx context.Context, id int64) error
+	ResetScheduleStatus(ctx context.Context, id int64) error
+	SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }
 

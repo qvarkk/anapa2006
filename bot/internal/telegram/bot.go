@@ -57,6 +57,9 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "lat:", bot.MatchTypePrefix, handleFetchLatest(st))
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "post:", bot.MatchTypePrefix, handlePostDetail(st))
 
+	// Scheduled
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, scheduled, bot.MatchTypeExact, handleScheduled)
+
 	// Schedule
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:u:", bot.MatchTypePrefix, handleScheduleUse(st))
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:e", bot.MatchTypePrefix, handleScheduleEdit(st))

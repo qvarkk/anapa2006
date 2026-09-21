@@ -80,6 +80,34 @@ simple:
 
     %s
   edit_placeholder: "Новый текст поста..."
+  #
+  scheduled: |
+    ✨ В этом разделе можно посмотреть посты, которые, установленные на отложенную публикацию
+
+    ⬇️ Выберите опцию
+  scheduled_list_header: "👁️ На отложенной публикации %d постов:"
+  scheduled_list_entry: |
+    🫆 <b>ID:</b> %[1]d
+    🗓️ %[2]s
+    %[3]s
+    💬 %[4]s
+    %[5]s
+  scheduled_details: |
+    🗓️ Время публикации: %[1]s
+    %[2]s
+    🖼️ Вложения: %[3]s
+    🔗 <a href="%[4]s">Ссылка на исходный пост</a>
+
+    <blockquote>%[4]s</blockquote>
+  #
+  scheduled_status_pending: "⏲️ Ожидает публикации"
+  scheduled_status_sending: "⏳ Отправляется (или зависло)"
+  scheduled_status_sent: "📨 Отправлено"
+  scheduled_status_cancelled: "🛑 Отменено"
+  #
+  btn_scheduled_list: "📋 Список отложенных"
+  btn_scheduled_sent: "⏰ Опубликованные посты"
+  btn_scheduled_settings: "⚙️ Настройки отложенных"
 
 plural:
   channel_new_count:

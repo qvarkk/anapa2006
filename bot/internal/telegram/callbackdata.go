@@ -18,8 +18,8 @@ const (
 
 	menu string = "menu:open"
 
-	fetch    string = "list:fetched"
-	schedule string = "list:scheduled"
+	fetch     string = "list:fetched"
+	scheduled string = "list:scheduled"
 
 	// lat:<page>
 	fetchLatest string = "lat:%d"
@@ -31,6 +31,9 @@ const (
 
 	// post:<post_id>:<prev_callback>
 	fetchPost string = "post:%d:%s"
+
+	scheduledList string = "later:l:%d"
+	scheduledSent string = "later:s:%d"
 
 	// sched::<post_id>:<prev_callback>
 	scheduleUse  string = "sched:u:%d:%s"

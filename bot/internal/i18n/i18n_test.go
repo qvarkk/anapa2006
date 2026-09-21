@@ -9,6 +9,8 @@ var allSimpleKeys = []Key{
 	NoAccess,
 	Unrecognized,
 	FeatureUnavailable,
+	FirstPage,
+	LastPage,
 
 	BtnBack,
 	BtnSelectPost,
@@ -34,6 +36,34 @@ var allSimpleKeys = []Key{
 	PostListHeader,
 	PostListEntry,
 	PostDetail,
+
+	Scheduled,
+	ScheduledListHeader,
+	ScheduledListEntry,
+	ScheduledDetails,
+
+	BtnScheduledList,
+	BtnScheduledSent,
+	BtnScheduledSettings,
+
+	ScheduledStatusPending,
+	ScheduledStatusSending,
+	ScheduledStatusSent,
+	ScheduledStatusCancelled,
+
+	SchedulePrompt,
+	ScheduledAt,
+	ScheduleSkipped,
+
+	ScheduleBtn30m,
+	ScheduleBtn1hr,
+	ScheduleBtn3hr,
+	ScheduleBtn6hr,
+	ScheduleBtn12hr,
+	ScheduleBtnCustom,
+
+	EditPrompt,
+	EditPlaceholder,
 }
 
 var allPluralKeys = []PluralKey{

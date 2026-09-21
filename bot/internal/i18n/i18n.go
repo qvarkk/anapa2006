@@ -71,6 +71,23 @@ const (
 	PostListEntry  Key = "post_list_entry"
 	PostDetail     Key = "post_detail"
 
+	// Scheduled (later)
+	Scheduled           Key = "scheduled"
+	ScheduledListHeader Key = "scheduled_list_header"
+	ScheduledListEntry  Key = "scheduled_list_entry"
+	ScheduledDetails    Key = "scheduled_details"
+
+	// Scheduled buttons
+	BtnScheduledList     Key = "btn_scheduled_list"
+	BtnScheduledSent     Key = "btn_scheduled_sent"
+	BtnScheduledSettings Key = "btn_scheduled_settings"
+
+	// Scheduled messages statuses
+	ScheduledStatusPending   Key = "scheduled_status_pending"
+	ScheduledStatusSending   Key = "scheduled_status_sending"
+	ScheduledStatusSent      Key = "scheduled_status_sent"
+	ScheduledStatusCancelled Key = "scheduled_status_cancelled"
+
 	// Schedule headers
 	SchedulePrompt  Key = "schedule_prompt"
 	ScheduledAt     Key = "scheduled_at"

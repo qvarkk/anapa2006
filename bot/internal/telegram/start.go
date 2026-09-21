@@ -12,8 +12,8 @@ import (
 func startMenuKeyboard(lang i18n.Lang) *models.InlineKeyboardMarkup {
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: string(fetch)}},
-			{{Text: i18n.T(lang, i18n.BtnScheduled), CallbackData: string(schedule)}},
+			{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: fetch}},
+			{{Text: i18n.T(lang, i18n.BtnScheduled), CallbackData: scheduled}},
 		},
 	}
 }
@@ -64,7 +64,7 @@ func handleDefault(ctx context.Context, b *bot.Bot, update *models.Update) {
 	lang := langFromContext(ctx)
 	kb := &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnOpenMenu), CallbackData: string(menu)}},
+			{{Text: i18n.T(lang, i18n.BtnOpenMenu), CallbackData: menu}},
 		},
 	}
 

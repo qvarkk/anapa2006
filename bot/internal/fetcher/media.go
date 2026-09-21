@@ -72,6 +72,16 @@ func render(n *html.Node, sb *strings.Builder, media *[]MediaItem) {
 			sb.WriteString(`<span class="tg-spoiler">`)
 			renderChildren(n, sb, media)
 			sb.WriteString("</span>")
+		case n.Data == "tg-emoji":
+			if emojiID := attr(n, "emoji-id"); emojiID != "" {
+				sb.WriteString(`<tg-emoji emoji-id="`)
+				sb.WriteString(html.EscapeString(emojiID))
+				sb.WriteString(`">`)
+				renderChildren(n, sb, media)
+				sb.WriteString("</tg-emoji>")
+			} else {
+				renderChildren(n, sb, media)
+			}
 		case telegramInlineTags[n.Data]:
 			sb.WriteString("<")
 			sb.WriteString(n.Data)

@@ -13,6 +13,7 @@ type Config struct {
 
 	TelegramBotToken string `required:"true" envconfig:"TELEGRAM_BOT_TOKEN"`
 
+	TelegramChannelChatID      int64 `required:"true" envconfig:"TELEGRAM_CHANNEL_CHAT_ID"`
 	TelegramCacheChannelChatID int64 `required:"true" envconfig:"TELEGRAM_CACHE_CHANNEL_CHAT_ID"`
 
 	DBPath string `default:"/var/opt/anapa2006/anapa2006.db" envconfig:"DB_PATH"`

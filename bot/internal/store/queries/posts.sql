@@ -4,6 +4,9 @@ VALUES (?, ?, ?, ?)
 ON CONFLICT(source_id, external_id) DO NOTHING
 RETURNING *;
 
+-- name: GetPost :one
+SELECT * FROM posts WHERE id = ?;
+
 -- name: ListPostsBySource :many
 SELECT p.*, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
@@ -27,3 +30,12 @@ SELECT COUNT(*) FROM posts;
 SELECT p.*, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
 WHERE p.id = ?;
+
+-- name: SkipPost :exec
+UPDATE posts SET status = 'skipped' WHERE id = ?;
+
+-- name: MarkPostScheduled :exec
+UPDATE posts SET status = 'scheduled' WHERE id = ?;
+
+-- name: MarkPostSent :exec
+UPDATE posts SET status = 'sent' WHERE id = ?;

@@ -36,13 +36,14 @@ func handlePostDetail(st *store.Store) bot.HandlerFunc {
 
 		lang := langFromContext(ctx)
 		chatID, msgID := callbackTarget(update)
+		callbackData := update.CallbackQuery.Data
 
-		parts := strings.SplitN(update.CallbackQuery.Data, ":", 3)
+		parts := strings.SplitN(callbackData, ":", 3)
 		if len(parts) != 3 {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
 				"malformed post detail callback",
-				slog.String("data", update.CallbackQuery.Data),
+				slog.String("data", callbackData),
 			)
 			return
 		}
@@ -51,7 +52,7 @@ func handlePostDetail(st *store.Store) bot.HandlerFunc {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
 				"malformed post id",
-				slog.String("data", update.CallbackQuery.Data),
+				slog.String("data", callbackData),
 			)
 			return
 		}
@@ -88,9 +89,9 @@ func handlePostDetail(st *store.Store) bot.HandlerFunc {
 		)
 
 		kb := &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: noop}},
-			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: noop}},
-			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: noop}},
+			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: format(scheduleUse, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: format(scheduleEdit, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: format(scheduleSkip, postID, callbackData)}},
 			{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
 		}}
 
@@ -161,10 +162,10 @@ func statusLabel(lang i18n.Lang, status string) string {
 		return i18n.T(lang, i18n.PostStatusNew)
 	case "skipped":
 		return i18n.T(lang, i18n.PostStatusSkipped)
-	case "reviewing":
-		return i18n.T(lang, i18n.PostStatusReviewing)
-	case "archived":
-		return i18n.T(lang, i18n.PostStatusArchived)
+	case "scheduled":
+		return i18n.T(lang, i18n.PostStatusScheduled)
+	case "sent":
+		return i18n.T(lang, i18n.PostStatusSent)
 	default:
 		return status
 	}

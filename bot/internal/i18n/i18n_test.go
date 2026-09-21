@@ -22,8 +22,8 @@ var allSimpleKeys = []Key{
 
 	PostStatusNew,
 	PostStatusSkipped,
-	PostStatusReviewing,
-	PostStatusArchived,
+	PostStatusScheduled,
+	PostStatusSent,
 
 	FetchMenu,
 	FetchChannelsMenu,

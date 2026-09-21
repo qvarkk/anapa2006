@@ -10,8 +10,13 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func New(ctx context.Context, token string, st *store.Store) (*bot.Bot, error) {
-	b, err := bot.New(token,
+type Config struct {
+	Token     string
+	ChannelID int64
+}
+
+func New(ctx context.Context, cfg Config, st *store.Store) (*bot.Bot, error) {
+	b, err := bot.New(cfg.Token,
 		bot.WithMiddlewares(requireAllowed(st)),
 		bot.WithDefaultHandler(handleDefault),
 	)
@@ -19,7 +24,7 @@ func New(ctx context.Context, token string, st *store.Store) (*bot.Bot, error) {
 		return nil, err
 	}
 
-	registerHandlers(b, st)
+	registerHandlers(b, cfg.ChannelID, st)
 
 	if err := setCommandsMenu(ctx, b); err != nil {
 		slog.LogAttrs(
@@ -32,7 +37,10 @@ func New(ctx context.Context, token string, st *store.Store) (*bot.Bot, error) {
 	return b, nil
 }
 
-func registerHandlers(b *bot.Bot, st *store.Store) {
+func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
+	// Posts edit match func
+	b.RegisterHandlerMatchFunc(isReplyToBot, handlePendingReply(st))
+
 	// Start
 	b.RegisterHandler(bot.HandlerTypeMessageText, string(commandStart), bot.MatchTypeExact, handleStartCommand)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, string(menu), bot.MatchTypeExact, handleOpenMenuCallback)
@@ -48,6 +56,12 @@ func registerHandlers(b *bot.Bot, st *store.Store) {
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "grp:c:", bot.MatchTypePrefix, handleFetchChannelPosts(st))
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "lat:", bot.MatchTypePrefix, handleFetchLatest(st))
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "post:", bot.MatchTypePrefix, handlePostDetail(st))
+
+	// Schedule
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:u:", bot.MatchTypePrefix, handleScheduleUse(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:e", bot.MatchTypePrefix, handleScheduleEdit(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:s:", bot.MatchTypePrefix, handleScheduleSkip(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:set", bot.MatchTypePrefix, handleScheduleCreate(st, channelID))
 }
 
 func setCommandsMenu(ctx context.Context, b *bot.Bot) error {

@@ -12,3 +12,10 @@ UPDATE schedule SET status = 'pending' WHERE id = ?;
 -- name: MarkScheduleSent :exec
 UPDATE schedule SET status = 'sent', sent_at = CURRENT_TIMESTAMP
 WHERE id = ? AND status = 'sending';
+
+-- name: CreateSchedule :exec
+INSERT INTO schedule (
+  draft_id, target_chat_id, scheduled_at
+) VALUES (
+  ?, ?, ?
+);

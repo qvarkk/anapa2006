@@ -33,6 +33,25 @@ func (q *Queries) CountPostsBySource(ctx context.Context, sourceID int64) (int64
 	return count, err
 }
 
+const getPost = `-- name: GetPost :one
+SELECT id, source_id, external_id, raw_text, published_at, fetched_at, status FROM posts WHERE id = ?
+`
+
+func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
+	row := q.db.QueryRowContext(ctx, getPost, id)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.SourceID,
+		&i.ExternalID,
+		&i.RawText,
+		&i.PublishedAt,
+		&i.FetchedAt,
+		&i.Status,
+	)
+	return i, err
+}
+
 const getPostWithSource = `-- name: GetPostWithSource :one
 SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
@@ -176,6 +195,33 @@ func (q *Queries) ListPostsLatest(ctx context.Context, arg ListPostsLatestParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const markPostScheduled = `-- name: MarkPostScheduled :exec
+UPDATE posts SET status = 'scheduled' WHERE id = ?
+`
+
+func (q *Queries) MarkPostScheduled(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostScheduled, id)
+	return err
+}
+
+const markPostSent = `-- name: MarkPostSent :exec
+UPDATE posts SET status = 'sent' WHERE id = ?
+`
+
+func (q *Queries) MarkPostSent(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostSent, id)
+	return err
+}
+
+const skipPost = `-- name: SkipPost :exec
+UPDATE posts SET status = 'skipped' WHERE id = ?
+`
+
+func (q *Queries) SkipPost(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, skipPost, id)
+	return err
 }
 
 const upsertPost = `-- name: UpsertPost :one

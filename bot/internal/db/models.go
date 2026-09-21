@@ -35,12 +35,13 @@ type DraftMedium struct {
 	CreatedAt     time.Time      `json:"created_at"`
 }
 
-type PendingAction struct {
-	ChatID    int64         `json:"chat_id"`
-	Action    string        `json:"action"`
-	PostID    sql.NullInt64 `json:"post_id"`
-	DraftID   sql.NullInt64 `json:"draft_id"`
-	UpdatedAt time.Time     `json:"updated_at"`
+type PendingReply struct {
+	ChatID          int64     `json:"chat_id"`
+	PromptMessageID int64     `json:"prompt_message_id"`
+	Action          string    `json:"action"`
+	DraftID         int64     `json:"draft_id"`
+	Origin          string    `json:"origin"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type Post struct {

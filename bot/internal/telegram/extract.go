@@ -2,7 +2,10 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	"github.com/go-telegram/bot/models"
 )
@@ -39,6 +42,41 @@ func extractIdentity(update *models.Update) (userID int64, chatID int64, ok bool
 		)
 		return 0, 0, false
 	}
+}
+
+// extract [nArgs]int64 data from a callback with a destination callback for a previous page
+func parseBackNavigation(
+	update *models.Update,
+	nPrefix int,
+	nArgs int,
+) (data []int64, origin string, err error) {
+	str := update.CallbackQuery.Data
+
+	totalSplits := nPrefix + nArgs + 1
+	parts := strings.SplitN(str, ":", totalSplits)
+
+	if len(parts) != totalSplits {
+		return nil, "", fmt.Errorf("malformed callback %q: expected at least %d components, got %d",
+			str, totalSplits, len(parts))
+	}
+
+	data = make([]int64, nArgs)
+	for i := range nArgs {
+		rawArg := parts[nPrefix+i]
+		parsedData, err := strconv.ParseInt(rawArg, 10, 64)
+		if err != nil {
+			return nil, "", fmt.Errorf("malformed data %q: failed to parse argument %q at index %d: %w",
+				str, rawArg, nPrefix+i, err)
+		}
+		data[i] = parsedData
+	}
+
+	origin = parts[totalSplits-1]
+	if origin == "" {
+		return nil, "", fmt.Errorf("malformed callback %q: trailing origin menu is empty", str)
+	}
+
+	return data, origin, nil
 }
 
 func chatIDFromUpdate(update *models.Update) (int64, bool) {

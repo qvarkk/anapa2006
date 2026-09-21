@@ -55,8 +55,8 @@ const (
 	// Posts statuses
 	PostStatusNew       Key = "post_status_new"
 	PostStatusSkipped   Key = "post_status_skipped"
-	PostStatusReviewing Key = "post_status_reviewing"
-	PostStatusArchived  Key = "post_status_archived"
+	PostStatusScheduled Key = "post_status_scheduled"
+	PostStatusSent      Key = "post_status_sent"
 
 	// List fetched titles
 	FetchMenu         Key = "list_fetched_menu_title"
@@ -70,6 +70,23 @@ const (
 	PostListHeader Key = "post_list_header"
 	PostListEntry  Key = "post_list_entry"
 	PostDetail     Key = "post_detail"
+
+	// Schedule headers
+	SchedulePrompt  Key = "schedule_prompt"
+	ScheduledAt     Key = "scheduled_at"
+	ScheduleSkipped Key = "schedule_skipped"
+
+	// Schedule btns
+	ScheduleBtn30m    Key = "schedule_btn_30m"
+	ScheduleBtn1hr    Key = "schedule_btn_1hr"
+	ScheduleBtn3hr    Key = "schedule_btn_3hr"
+	ScheduleBtn6hr    Key = "schedule_btn_6hr"
+	ScheduleBtn12hr   Key = "schedule_btn_12hr"
+	ScheduleBtnCustom Key = "schedule_btn_custom"
+
+	// Schedule edit
+	EditPrompt      Key = "edit_prompt"
+	EditPlaceholder Key = "edit_placeholder"
 )
 
 // !!!

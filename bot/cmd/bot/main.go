@@ -37,8 +37,13 @@ func main() {
 	}
 	defer st.Close()
 
+	tgCfg := telegram.Config{
+		Token:     cfg.TelegramBotToken,
+		ChannelID: cfg.TelegramChannelChatID,
+	}
+
 	slog.LogAttrs(ctx, slog.LevelInfo, "starting bot...")
-	b, err := telegram.New(ctx, cfg.TelegramBotToken, st)
+	b, err := telegram.New(ctx, tgCfg, st)
 	if err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelError,

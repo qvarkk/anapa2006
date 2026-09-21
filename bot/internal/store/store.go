@@ -18,7 +18,7 @@ var schemaSQL string
 
 type Store struct {
 	*db.Queries
-	conn *sql.DB
+	Conn *sql.DB
 }
 
 func Open(path string) (*Store, error) {
@@ -54,16 +54,16 @@ func Open(path string) (*Store, error) {
 
 	return &Store{
 		Queries: db.New(conn),
-		conn:    conn,
+		Conn:    conn,
 	}, err
 }
 
 func (s *Store) Close() error {
-	return s.conn.Close()
+	return s.Conn.Close()
 }
 
 func (s *Store) WithTx(ctx context.Context, fn func(*db.Queries) error) (err error) {
-	tx, err := s.conn.BeginTx(ctx, nil)
+	tx, err := s.Conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("store: begin tx: %w", err)
 	}

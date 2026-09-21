@@ -9,6 +9,29 @@ import (
 	"context"
 )
 
+const createDraft = `-- name: CreateDraft :one
+INSERT INTO drafts (post_id, final_text, user_id) VALUES (?, ?, ?) RETURNING id, post_id, final_text, user_id, created_at
+`
+
+type CreateDraftParams struct {
+	PostID    int64  `json:"post_id"`
+	FinalText string `json:"final_text"`
+	UserID    int64  `json:"user_id"`
+}
+
+func (q *Queries) CreateDraft(ctx context.Context, arg CreateDraftParams) (Draft, error) {
+	row := q.db.QueryRowContext(ctx, createDraft, arg.PostID, arg.FinalText, arg.UserID)
+	var i Draft
+	err := row.Scan(
+		&i.ID,
+		&i.PostID,
+		&i.FinalText,
+		&i.UserID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getDraftByID = `-- name: GetDraftByID :one
 SELECT id, post_id, final_text, user_id, created_at FROM drafts WHERE id = ?
 `
@@ -24,4 +47,29 @@ func (q *Queries) GetDraftByID(ctx context.Context, id int64) (Draft, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getDraftsPostID = `-- name: GetDraftsPostID :one
+SELECT post_id FROM drafts WHERE id = ?
+`
+
+func (q *Queries) GetDraftsPostID(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getDraftsPostID, id)
+	var post_id int64
+	err := row.Scan(&post_id)
+	return post_id, err
+}
+
+const updateDraftText = `-- name: UpdateDraftText :exec
+UPDATE drafts SET final_text = ? WHERE id = ?
+`
+
+type UpdateDraftTextParams struct {
+	FinalText string `json:"final_text"`
+	ID        int64  `json:"id"`
+}
+
+func (q *Queries) UpdateDraftText(ctx context.Context, arg UpdateDraftTextParams) error {
+	_, err := q.db.ExecContext(ctx, updateDraftText, arg.FinalText, arg.ID)
+	return err
 }

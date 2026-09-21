@@ -30,6 +30,25 @@ func (q *Queries) ClaimDueSchedule(ctx context.Context, id int64) (Schedule, err
 	return i, err
 }
 
+const createSchedule = `-- name: CreateSchedule :exec
+INSERT INTO schedule (
+  draft_id, target_chat_id, scheduled_at
+) VALUES (
+  ?, ?, ?
+)
+`
+
+type CreateScheduleParams struct {
+	DraftID      int64     `json:"draft_id"`
+	TargetChatID int64     `json:"target_chat_id"`
+	ScheduledAt  time.Time `json:"scheduled_at"`
+}
+
+func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, createSchedule, arg.DraftID, arg.TargetChatID, arg.ScheduledAt)
+	return err
+}
+
 const listDuePending = `-- name: ListDuePending :many
 SELECT id, draft_id, target_chat_id, scheduled_at, status, sent_at FROM schedule WHERE scheduled_at <= ? ORDER BY scheduled_at DESC
 `

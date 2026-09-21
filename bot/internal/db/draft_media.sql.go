@@ -7,7 +7,38 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
+
+const createDraftMedia = `-- name: CreateDraftMedia :exec
+INSERT INTO draft_media (
+  draft_id, kind, origin_media_id,
+  file_id, url, position
+) VALUES (
+  ?, ?, ?, ?, ?, ?
+)
+`
+
+type CreateDraftMediaParams struct {
+	DraftID       int64          `json:"draft_id"`
+	Kind          string         `json:"kind"`
+	OriginMediaID interface{}    `json:"origin_media_id"`
+	FileID        sql.NullString `json:"file_id"`
+	Url           sql.NullString `json:"url"`
+	Position      int64          `json:"position"`
+}
+
+func (q *Queries) CreateDraftMedia(ctx context.Context, arg CreateDraftMediaParams) error {
+	_, err := q.db.ExecContext(ctx, createDraftMedia,
+		arg.DraftID,
+		arg.Kind,
+		arg.OriginMediaID,
+		arg.FileID,
+		arg.Url,
+		arg.Position,
+	)
+	return err
+}
 
 const listDraftMedia = `-- name: ListDraftMedia :many
 SELECT id, draft_id, kind, origin_media_id, file_id, url, position, created_at FROM draft_media WHERE draft_id = ?

@@ -21,12 +21,28 @@ const (
 	fetch    string = "list:fetched"
 	schedule string = "list:scheduled"
 
+	// lat:<page>
 	fetchLatest string = "lat:%d"
 
-	fetchChannels     string = "grp:p:%d"
+	// grp:p:<page>
+	fetchChannels string = "grp:p:%d"
+	// grp:c:<source_id>:<post_page>:<group_page>
 	fetchChannelPosts string = "grp:c:%d:%d:%d"
 
+	// post:<post_id>:<prev_callback>
 	fetchPost string = "post:%d:%s"
+
+	// sched::<post_id>:<prev_callback>
+	scheduleUse  string = "sched:u:%d:%s"
+	scheduleEdit string = "sched:e:%d:%s"
+	scheduleSkip string = "sched:s:%d:%s"
+
+	// sched:get:<draft_id>:<prev_callback>
+	scheduleInput string = "sched:get:%d:%s"
+	// sched:custom:<draft_id>:<prev_callback>
+	scheduleCreateCustom string = "sched:custom:%d:%s"
+	// sched:set:<draft_id>:<dur>:<prev_callback>
+	scheduleCreate string = "sched:set:%d:%s:%s"
 )
 
 func ackCallback(ctx context.Context, b *bot.Bot, update *models.Update) {

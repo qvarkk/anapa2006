@@ -76,12 +76,6 @@ func (s *Scheduler) Tick(ctx context.Context) {
 func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 	claimed, err := s.store.ClaimDueSchedule(ctx, sched.ID)
 	if errors.Is(err, sql.ErrNoRows) {
-		// claimed somewhere else ??
-		slog.LogAttrs(
-			ctx, slog.LevelWarn,
-			"schedule was already claimed",
-			slog.Int64("schedule_id", sched.ID),
-		)
 		return
 	}
 	if err != nil {
@@ -93,11 +87,6 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		)
 		return
 	}
-
-	slog.LogAttrs(
-		ctx, slog.LevelDebug,
-		"scheduler tick",
-	)
 
 	draft, err := s.store.GetDraftByID(ctx, claimed.DraftID)
 	if err != nil {
@@ -142,12 +131,20 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 
 	if err := s.store.MarkScheduleSent(ctx, claimed.ID); err != nil {
 		slog.LogAttrs(
-			ctx, slog.LevelError,
+			ctx, slog.LevelWarn,
 			"mark schedule sent",
 			slog.Int64("schedule_id", claimed.ID),
 			slog.String("error", err.Error()),
 		)
-		return
+	}
+
+	if err := s.store.MarkPostSent(ctx, draft.PostID); err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelWarn,
+			"mark post sent",
+			slog.Int64("post_id", draft.PostID),
+			slog.String("error", err.Error()),
+		)
 	}
 
 	if s.onAfterPost != nil {

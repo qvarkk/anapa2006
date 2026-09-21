@@ -28,8 +28,8 @@ simple:
   #
   post_status_new: "🆕 Новый"
   post_status_skipped: "✋ Пропущен"
-  post_status_reviewing: "🕒 В обработке"
-  post_status_archived: "📨 В архиве"
+  post_status_scheduled: "🕒 Запланирован на отправку"
+  post_status_sent: "📨 Отправлен"
   #
   list_fetched_menu_title: |
     ✨ В этом разделе можно посмотреть посты, которые были загружены из источников
@@ -51,11 +51,35 @@ simple:
   post_detail: |
     📣 Канал: %[1]s
     🗓️ Дата: %[2]s
-    📩 Статус: %[3]s
+    %[3]s
     🔗 <a href="%[4]s">Ссылка на пост</a>
     🖼️ Вложения: %[5]s
 
     <blockquote>%[6]s</blockquote>
+  #
+  schedule_prompt: |
+    🚚 Выберите время для публикации поста.
+    📩 Итоговый текст поста:
+
+    %s
+  scheduled_at: |
+    🛫 Публикация была успешно установлена на %s
+  schedule_skipped: |
+    🗑️ Публикация была скипнута
+  #
+  schedule_btn_30m: "⏰ Через 30 минут"
+  schedule_btn_1hr: "🕐 Через 1 час"
+  schedule_btn_3hr: "🕒 Через 3 часа"
+  schedule_btn_6hr: "🕕 Через 6 часов"
+  schedule_btn_12hr: "🕛 Через 12 часов"
+  schedule_btn_custom: "🔢 Ручной ввод"
+  #
+  edit_prompt: |
+    💬 Введите измененный текст
+    📩 Исходный текст:
+
+    %s
+  edit_placeholder: "Новый текст поста..."
 
 plural:
   channel_new_count:

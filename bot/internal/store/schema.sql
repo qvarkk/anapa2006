@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS posts (
   published_at DATETIME,
   fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status TEXT NOT NULL DEFAULT 'new' 
-    CHECK (status IN ('new', 'skipped', 'reviewing', 'scheduled', 'sent')),
+    CHECK (status IN ('new', 'skipped', 'scheduled', 'sent')),
   UNIQUE(source_id, external_id)
 );
 
@@ -64,11 +64,13 @@ CREATE TABLE IF NOT EXISTS schedule (
   sent_at DATETIME
 );
 
-CREATE TABLE IF NOT EXISTS pending_actions ( -- kinda like FSM
-  chat_id INTEGER PRIMARY KEY,
-  action TEXT NOT NULL 
-    CHECK (action IN ('awaiting_edit', 'awaiting_schedule_time')),
-  post_id INTEGER,
-  draft_id INTEGER,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS pending_replies (
+  chat_id INTEGER NOT NULL,
+  prompt_message_id INTEGER NOT NULL,
+  action TEXT NOT NULL
+    CHECK (action IN ('awaiting_text', 'awaiting_schedule')),
+  draft_id INTEGER NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+  origin TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (chat_id, prompt_message_id)
 );

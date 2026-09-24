@@ -10,6 +10,38 @@ import (
 	"database/sql"
 )
 
+const countMediaKindsByDraft = `-- name: CountMediaKindsByDraft :many
+SELECT kind, COUNT(*) AS cnt FROM draft_media WHERE draft_id = ? GROUP BY kind
+`
+
+type CountMediaKindsByDraftRow struct {
+	Kind string `json:"kind"`
+	Cnt  int64  `json:"cnt"`
+}
+
+func (q *Queries) CountMediaKindsByDraft(ctx context.Context, draftID int64) ([]CountMediaKindsByDraftRow, error) {
+	rows, err := q.db.QueryContext(ctx, countMediaKindsByDraft, draftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountMediaKindsByDraftRow
+	for rows.Next() {
+		var i CountMediaKindsByDraftRow
+		if err := rows.Scan(&i.Kind, &i.Cnt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createDraftMedia = `-- name: CreateDraftMedia :exec
 INSERT INTO draft_media (
   draft_id, kind, origin_media_id,

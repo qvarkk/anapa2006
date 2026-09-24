@@ -8,3 +8,6 @@ INSERT INTO draft_media (
 ) VALUES (
   ?, ?, ?, ?, ?, ?
 );
+
+-- name: CountMediaKindsByDraft :many
+SELECT kind, COUNT(*) AS cnt FROM draft_media WHERE draft_id = ? GROUP BY kind;

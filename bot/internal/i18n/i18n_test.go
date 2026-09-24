@@ -13,7 +13,6 @@ var allSimpleKeys = []Key{
 	LastPage,
 
 	BtnBack,
-	BtnSelectPost,
 	BtnUse,
 	BtnEdit,
 	BtnSkip,
@@ -36,11 +35,13 @@ var allSimpleKeys = []Key{
 	PostListHeader,
 	PostListEntry,
 	PostDetail,
+	BtnSelectPost,
 
 	Scheduled,
 	ScheduledListHeader,
 	ScheduledListEntry,
 	ScheduledDetails,
+	BtnSelectSchedule,
 
 	BtnScheduledList,
 	BtnScheduledSent,

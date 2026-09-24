@@ -41,11 +41,10 @@ const (
 	LastPage           Key = "last_page"
 
 	// Common buttons
-	BtnBack       Key = "btn_back"
-	BtnSelectPost Key = "btn_select_post"
-	BtnUse        Key = "btn_use"
-	BtnEdit       Key = "btn_edit"
-	BtnSkip       Key = "btn_skip"
+	BtnBack Key = "btn_back"
+	BtnUse  Key = "btn_use"
+	BtnEdit Key = "btn_edit"
+	BtnSkip Key = "btn_skip"
 
 	// Start menu buttons
 	BtnOpenMenu  Key = "btn_open_menu"
@@ -70,12 +69,14 @@ const (
 	PostListHeader Key = "post_list_header"
 	PostListEntry  Key = "post_list_entry"
 	PostDetail     Key = "post_detail"
+	BtnSelectPost  Key = "btn_select_post"
 
-	// Scheduled (later)
+	// Scheduled lists (later)
 	Scheduled           Key = "scheduled"
 	ScheduledListHeader Key = "scheduled_list_header"
 	ScheduledListEntry  Key = "scheduled_list_entry"
 	ScheduledDetails    Key = "scheduled_details"
+	BtnSelectSchedule   Key = "btn_select_schedule"
 
 	// Scheduled buttons
 	BtnScheduledList     Key = "btn_scheduled_list"

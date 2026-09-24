@@ -32,20 +32,21 @@ const (
 	// post:<post_id>:<prev_callback>
 	fetchPost string = "post:%d:%s"
 
-	scheduledList string = "later:l:%d"
-	scheduledSent string = "later:s:%d"
+	// sched::<page>
+	scheduledList string = "sched:list:%d"
+	scheduledSent string = "sched:sent:%d"
 
 	// sched::<post_id>:<prev_callback>
-	scheduleUse  string = "sched:u:%d:%s"
-	scheduleEdit string = "sched:e:%d:%s"
-	scheduleSkip string = "sched:s:%d:%s"
+	scheduleUse  string = "sched:use:%d:%s"
+	scheduleEdit string = "sched:edit:%d:%s"
+	scheduleSkip string = "sched:set:%d:%s"
 
 	// sched:get:<draft_id>:<prev_callback>
 	scheduleInput string = "sched:get:%d:%s"
 	// sched:custom:<draft_id>:<prev_callback>
 	scheduleCreateCustom string = "sched:custom:%d:%s"
-	// sched:set:<draft_id>:<dur>:<prev_callback>
-	scheduleCreate string = "sched:set:%d:%s:%s"
+	// sched:create:<draft_id>:<dur>:<prev_callback>
+	scheduleCreate string = "sched:create:%d:%s:%s"
 )
 
 func ackCallback(ctx context.Context, b *bot.Bot, update *models.Update) {

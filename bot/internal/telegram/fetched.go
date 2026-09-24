@@ -145,7 +145,7 @@ func handleFetchLatest(st *store.Store) bot.HandlerFunc {
 		for _, r := range rows {
 			posts = append(posts, listedPost{
 				ID: r.ID, Channel: r.ChannelHandle, Link: r.ExternalID, PublishedAt: r.PublishedAt.Time,
-				Snippet: r.RawText, Status: r.Status, MediaCounts: mediaCounts(ctx, st, r.ID),
+				Snippet: r.RawText, Status: r.Status, MediaCounts: postMediaCounts(ctx, st, r.ID),
 			})
 		}
 
@@ -157,14 +157,18 @@ func handleFetchLatest(st *store.Store) bot.HandlerFunc {
 			next = format(fetchLatest, page+1)
 		}
 
-		renderPostListPage(ctx, b, update, lang, posts, page, tp, int(total),
-			func(id int64) string {
+		payload := renderPostsPayload{
+			Bot: b, Update: update, Lang: lang, Page: page, TotalPages: tp, Total: int(total),
+			PrevCallback: prev, NextCallback: next, Posts: posts, BackCallback: fetch,
+			SelectCallback: func(id int64) string {
 				return format(
 					fetchPost, id,
 					format(fetchLatest, page),
 				)
 			},
-			prev, next, fetch)
+		}
+
+		renderPostListPage(ctx, payload)
 	}
 }
 
@@ -207,7 +211,7 @@ func handleFetchChannelPosts(st *store.Store) bot.HandlerFunc {
 		for _, r := range rows {
 			posts = append(posts, listedPost{
 				ID: r.ID, Channel: r.ChannelHandle, Link: r.ExternalID, PublishedAt: r.PublishedAt.Time,
-				Snippet: r.RawText, Status: r.Status, MediaCounts: mediaCounts(ctx, st, r.ID),
+				Snippet: r.RawText, Status: r.Status, MediaCounts: postMediaCounts(ctx, st, r.ID),
 			})
 		}
 
@@ -219,23 +223,29 @@ func handleFetchChannelPosts(st *store.Store) bot.HandlerFunc {
 			next = format(fetchChannelPosts, sourceID, postPage+1, grpPage)
 		}
 
-		renderPostListPage(ctx, b, update, lang, posts, postPage, tp, int(total),
-			func(id int64) string {
+		payload := renderPostsPayload{
+			Bot: b, Update: update, Lang: lang, Page: postPage, TotalPages: tp, Total: int(total),
+			PrevCallback: prev, NextCallback: next, Posts: posts,
+			BackCallback: format(fetchChannelPosts, sourceID, postPage, grpPage),
+			SelectCallback: func(id int64) string {
 				return format(
 					fetchPost, id,
 					format(fetchChannelPosts, sourceID, postPage, grpPage),
 				)
 			},
-			prev, next, format(fetchChannels, grpPage))
+		}
+
+		renderPostListPage(ctx, payload)
 	}
 }
 
-func mediaCounts(ctx context.Context, st *store.Store, postID int64) map[string]int {
+// TODO: refactor to unify with scheduledMediaCounts
+func postMediaCounts(ctx context.Context, st *store.Store, postID int64) map[string]int {
 	rows, err := st.CountMediaKindsByPost(ctx, postID)
 	if err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelWarn,
-			"count media kinds",
+			"count post media kinds",
 			slog.Int64("post_id", postID),
 			slog.String("error", err.Error()),
 		)

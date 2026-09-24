@@ -59,12 +59,13 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 
 	// Scheduled
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, scheduled, bot.MatchTypeExact, handleScheduled)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:list:", bot.MatchTypePrefix, handleScheduledList(st))
 
 	// Schedule
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:u:", bot.MatchTypePrefix, handleScheduleUse(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:e", bot.MatchTypePrefix, handleScheduleEdit(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:s:", bot.MatchTypePrefix, handleScheduleSkip(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:set", bot.MatchTypePrefix, handleScheduleCreate(st, channelID))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:use:", bot.MatchTypePrefix, handleScheduleUse(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:edit:", bot.MatchTypePrefix, handleScheduleEdit(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:set:", bot.MatchTypePrefix, handleScheduleSkip(st))
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:create:", bot.MatchTypePrefix, handleScheduleCreate(st, channelID))
 }
 
 func setCommandsMenu(ctx context.Context, b *bot.Bot) error {

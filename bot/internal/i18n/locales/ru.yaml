@@ -17,7 +17,7 @@ simple:
   last_page: "Вы на последней странице."
   #
   btn_back: "⬅️ Назад"
-  btn_select_post: "📌 ID %d"
+  btn_select_post: "🫆 ID %d"
   btn_use: "▶️ Использовать"
   btn_edit: "📝 Редактировать"
   btn_skip: "🗑️ Скип"
@@ -99,6 +99,7 @@ simple:
     🔗 <a href="%[4]s">Ссылка на исходный пост</a>
 
     <blockquote>%[4]s</blockquote>
+  btn_select_schedule: "🫆 ID %d"
   #
   scheduled_status_pending: "⏲️ Ожидает публикации"
   scheduled_status_sending: "⏳ Отправляется (или зависло)"

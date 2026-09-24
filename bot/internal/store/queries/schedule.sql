@@ -19,3 +19,12 @@ INSERT INTO schedule (
 ) VALUES (
   ?, ?, ?
 );
+
+-- name: CountScheduled :one
+SELECT COUNT(*) FROM schedule;
+
+-- name: ListScheduledLatest :many
+SELECT s.*, d.final_text FROM schedule s
+JOIN drafts d ON d.id = s.draft_id
+ORDER BY s.scheduled_at DESC
+LIMIT ? OFFSET ?;

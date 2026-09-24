@@ -13,9 +13,11 @@ type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
 	AddPostMedia(ctx context.Context, arg AddPostMediaParams) (PostMedium, error)
 	ClaimDueSchedule(ctx context.Context, id int64) (Schedule, error)
+	CountMediaKindsByDraft(ctx context.Context, draftID int64) ([]CountMediaKindsByDraftRow, error)
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
 	CountPosts(ctx context.Context) (int64, error)
 	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
+	CountScheduled(ctx context.Context) (int64, error)
 	CountSources(ctx context.Context) (int64, error)
 	CreateDraft(ctx context.Context, arg CreateDraftParams) (Draft, error)
 	CreateDraftMedia(ctx context.Context, arg CreateDraftMediaParams) error
@@ -35,6 +37,7 @@ type Querier interface {
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
+	ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
 	MarkPostScheduled(ctx context.Context, id int64) error
 	MarkPostSent(ctx context.Context, id int64) error

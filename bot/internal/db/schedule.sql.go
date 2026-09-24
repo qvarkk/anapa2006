@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -28,6 +29,17 @@ func (q *Queries) ClaimDueSchedule(ctx context.Context, id int64) (Schedule, err
 		&i.SentAt,
 	)
 	return i, err
+}
+
+const countScheduled = `-- name: CountScheduled :one
+SELECT COUNT(*) FROM schedule
+`
+
+func (q *Queries) CountScheduled(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countScheduled)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createSchedule = `-- name: CreateSchedule :exec
@@ -69,6 +81,59 @@ func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]
 			&i.ScheduledAt,
 			&i.Status,
 			&i.SentAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listScheduledLatest = `-- name: ListScheduledLatest :many
+SELECT s.id, s.draft_id, s.target_chat_id, s.scheduled_at, s.status, s.sent_at, d.final_text FROM schedule s
+JOIN drafts d ON d.id = s.draft_id
+ORDER BY s.scheduled_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListScheduledLatestParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListScheduledLatestRow struct {
+	ID           int64        `json:"id"`
+	DraftID      int64        `json:"draft_id"`
+	TargetChatID int64        `json:"target_chat_id"`
+	ScheduledAt  time.Time    `json:"scheduled_at"`
+	Status       string       `json:"status"`
+	SentAt       sql.NullTime `json:"sent_at"`
+	FinalText    string       `json:"final_text"`
+}
+
+func (q *Queries) ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error) {
+	rows, err := q.db.QueryContext(ctx, listScheduledLatest, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListScheduledLatestRow
+	for rows.Next() {
+		var i ListScheduledLatestRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DraftID,
+			&i.TargetChatID,
+			&i.ScheduledAt,
+			&i.Status,
+			&i.SentAt,
+			&i.FinalText,
 		); err != nil {
 			return nil, err
 		}

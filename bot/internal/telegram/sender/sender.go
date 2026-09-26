@@ -1,4 +1,4 @@
-package telegram
+package sender
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type Sender struct {
 	b *bot.Bot
 }
 
-func NewSender(b *bot.Bot) *Sender {
+func New(b *bot.Bot) *Sender {
 	return &Sender{b: b}
 }
 

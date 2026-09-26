@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	HttpClientTimeout = 15 * time.Second
+	HttpClientTimeout = 60 * time.Second
 	DodgeSleepTimeout = 1200 * time.Millisecond
 )
 
@@ -210,6 +210,7 @@ func (f *Fetcher) storeAndCacheMedia(ctx context.Context, postID int64, media []
 
 		fileID, err := f.mediaCacher.CacheMedia(ctx, string(m.MediaType), m.URL)
 		if err != nil {
+			// TODO: mark post as failed
 			slog.LogAttrs(
 				ctx, slog.LevelWarn,
 				"cache media file_id failed - URL will eventually expire",

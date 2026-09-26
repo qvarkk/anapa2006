@@ -1,10 +1,13 @@
-package telegram
+package post
 
 import (
 	"context"
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/callback"
+	"qq/anapa2006/internal/telegram/extract"
+	"qq/anapa2006/internal/telegram/render"
 	"strconv"
 	"strings"
 
@@ -12,12 +15,12 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func handlePostDetail(st *store.Store) bot.HandlerFunc {
+func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		ackCallback(ctx, b, update)
+		callback.Ack(ctx, b, update)
 
-		lang := langFromContext(ctx)
-		chatID, msgID := callbackTarget(update)
+		lang := extract.Lang(ctx)
+		chatID, msgID := extract.CallbackTarget(update)
 		callbackData := update.CallbackQuery.Data
 
 		parts := strings.SplitN(callbackData, ":", 3)
@@ -67,13 +70,13 @@ func handlePostDetail(st *store.Store) bot.HandlerFunc {
 
 		text := i18n.T(lang, i18n.PostDetail,
 			post.ChannelHandle, post.PublishedAt.Time.Format("02.01.2006 15:04"),
-			postStatusLabel(lang, post.Status), post.ExternalID, attachmentsSummary(counts), post.RawText,
+			render.PostStatusLabel(lang, post.Status), post.ExternalID, render.AttachmentsSummary(counts), post.RawText,
 		)
 
 		kb := &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: format(scheduleUse, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: format(scheduleEdit, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: format(scheduleSkip, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: callback.Format(callback.ScheduleUse, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: callback.Format(callback.ScheduleEdit, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: callback.Format(callback.ScheduleSkip, postID, callbackData)}},
 			{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
 		}}
 

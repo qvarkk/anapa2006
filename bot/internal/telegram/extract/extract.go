@@ -1,4 +1,4 @@
-package telegram
+package extract
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func extractIdentity(update *models.Update) (userID int64, chatID int64, ok bool) {
+func Identity(update *models.Update) (userID int64, chatID int64, ok bool) {
 	switch {
 	case update.Message != nil && update.Message.From != nil:
 		return update.Message.From.ID, update.Message.Chat.ID, true
@@ -44,8 +44,23 @@ func extractIdentity(update *models.Update) (userID int64, chatID int64, ok bool
 	}
 }
 
+func ChatID(update *models.Update) (int64, bool) {
+	if update.Message != nil {
+		return update.Message.Chat.ID, true
+	}
+	if update.CallbackQuery != nil && update.CallbackQuery.Message.Message != nil {
+		return update.CallbackQuery.Message.Message.Chat.ID, true
+	}
+	return 0, false
+}
+
+func CallbackTarget(update *models.Update) (chatID int64, messageID int) {
+	msg := update.CallbackQuery.Message.Message
+	return msg.Chat.ID, msg.ID
+}
+
 // extract [nArgs]int64 data from a callback with a destination callback for a previous page
-func parseBackNavigation(
+func BackNavigation(
 	update *models.Update,
 	nPrefix int,
 	nArgs int,
@@ -77,19 +92,4 @@ func parseBackNavigation(
 	}
 
 	return data, origin, nil
-}
-
-func chatIDFromUpdate(update *models.Update) (int64, bool) {
-	if update.Message != nil {
-		return update.Message.Chat.ID, true
-	}
-	if update.CallbackQuery != nil && update.CallbackQuery.Message.Message != nil {
-		return update.CallbackQuery.Message.Message.Chat.ID, true
-	}
-	return 0, false
-}
-
-func callbackTarget(update *models.Update) (chatID int64, messageID int) {
-	msg := update.CallbackQuery.Message.Message
-	return msg.Chat.ID, msg.ID
 }

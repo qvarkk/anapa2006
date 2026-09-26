@@ -1,4 +1,4 @@
-package telegram
+package cache
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-const HttpClientTimeout = 15 * time.Second
+const HttpClientTimeout = 60 * time.Second
 
 type MediaCacher struct {
 	bot         *bot.Bot

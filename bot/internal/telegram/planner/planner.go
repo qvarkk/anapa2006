@@ -1,4 +1,4 @@
-package telegram
+package planner
 
 import (
 	"context"
@@ -8,6 +8,9 @@ import (
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/callback"
+	"qq/anapa2006/internal/telegram/extract"
+	"qq/anapa2006/internal/telegram/keyboard"
 	"strconv"
 	"strings"
 	"time"
@@ -16,20 +19,12 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-const (
-	in30m  string = "30m"
-	in1hr  string = "1h"
-	in3hr  string = "3h"
-	in6hr  string = "6h"
-	in12hr string = "12h"
-)
-
-func handleScheduleUse(st *store.Store) bot.HandlerFunc {
+func HandleScheduleUse(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		ackCallback(ctx, b, update)
-		lang := langFromContext(ctx)
+		callback.Ack(ctx, b, update)
+		lang := extract.Lang(ctx)
 
-		data, origin, err := parseBackNavigation(update, 2, 1)
+		data, origin, err := extract.BackNavigation(update, 2, 1)
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
@@ -62,8 +57,8 @@ func handleScheduleUse(st *store.Store) bot.HandlerFunc {
 			return
 		}
 
-		kb := scheduleKeyboard(draft.ID, origin, lang)
-		chatID, msgID := callbackTarget(update)
+		kb := keyboard.ScheduleKeyboard(draft.ID, origin, lang)
+		chatID, msgID := extract.CallbackTarget(update)
 
 		if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			MessageID: msgID, ChatID: chatID, Text: i18n.T(lang, i18n.SchedulePrompt, draft.FinalText),
@@ -84,12 +79,12 @@ func handleScheduleUse(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func handleScheduleEdit(st *store.Store) bot.HandlerFunc {
+func HandleScheduleEdit(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		ackCallback(ctx, b, update)
-		lang := langFromContext(ctx)
+		callback.Ack(ctx, b, update)
+		lang := extract.Lang(ctx)
 
-		data, origin, err := parseBackNavigation(update, 2, 1)
+		data, origin, err := extract.BackNavigation(update, 2, 1)
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
@@ -122,7 +117,7 @@ func handleScheduleEdit(st *store.Store) bot.HandlerFunc {
 			return
 		}
 
-		chatID, _ := callbackTarget(update)
+		chatID, _ := extract.CallbackTarget(update)
 
 		sent, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:    chatID,
@@ -161,12 +156,12 @@ func handleScheduleEdit(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func handleScheduleSkip(st *store.Store) bot.HandlerFunc {
+func HandleScheduleSkip(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		ackCallback(ctx, b, update)
-		lang := langFromContext(ctx)
+		callback.Ack(ctx, b, update)
+		lang := extract.Lang(ctx)
 
-		data, origin, err := parseBackNavigation(update, 2, 1)
+		data, origin, err := extract.BackNavigation(update, 2, 1)
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
@@ -187,7 +182,7 @@ func handleScheduleSkip(st *store.Store) bot.HandlerFunc {
 			return
 		}
 
-		chatID, msgID := callbackTarget(update)
+		chatID, msgID := extract.CallbackTarget(update)
 
 		if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID: chatID, MessageID: msgID,
@@ -209,11 +204,11 @@ func handleScheduleSkip(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func handleScheduleCreate(st *store.Store, channelID int64) bot.HandlerFunc {
+func HandleScheduleCreate(st *store.Store, channelID int64) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		ackCallback(ctx, b, update)
+		callback.Ack(ctx, b, update)
 
-		lang := langFromContext(ctx)
+		lang := extract.Lang(ctx)
 
 		parts := strings.SplitN(update.CallbackQuery.Data, ":", 5)
 		if len(parts) != 5 {
@@ -286,7 +281,7 @@ func handleScheduleCreate(st *store.Store, channelID int64) bot.HandlerFunc {
 			slog.String("scheduled_at", scheduledAt.Format("02.01.2006 15:04")),
 		)
 
-		chatID, msgID := callbackTarget(update)
+		chatID, msgID := extract.CallbackTarget(update)
 
 		b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID: chatID, MessageID: msgID,
@@ -296,24 +291,6 @@ func handleScheduleCreate(st *store.Store, channelID int64) bot.HandlerFunc {
 			}},
 		})
 	}
-}
-
-func scheduleKeyboard(draftID int64, origin string, lang i18n.Lang) *models.InlineKeyboardMarkup {
-	mk := func(labelKey i18n.Key, duration string) models.InlineKeyboardButton {
-		return models.InlineKeyboardButton{
-			Text:         i18n.T(lang, labelKey),
-			CallbackData: fmt.Sprintf(scheduleCreate, draftID, duration, origin),
-		}
-	}
-	return &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-		{mk(i18n.ScheduleBtn30m, in30m)},
-		{mk(i18n.ScheduleBtn1hr, in1hr)},
-		{mk(i18n.ScheduleBtn3hr, in3hr)},
-		{mk(i18n.ScheduleBtn6hr, in6hr)},
-		{mk(i18n.ScheduleBtn12hr, in12hr)},
-		{{Text: i18n.T(lang, i18n.ScheduleBtnCustom), CallbackData: noop}},
-		{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
-	}}
 }
 
 func postWithMediaByID(
@@ -342,7 +319,7 @@ func createDraftWithMediaTx(
 	media []db.PostMedium,
 	draftText string,
 ) (*db.Draft, error) {
-	userID, _, ok := extractIdentity(update)
+	userID, _, ok := extract.Identity(update)
 	if !ok {
 		return nil, fmt.Errorf("extract identity")
 	}

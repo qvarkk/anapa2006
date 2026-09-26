@@ -1,4 +1,4 @@
-package telegram
+package reply
 
 import (
 	"context"
@@ -8,18 +8,20 @@ import (
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/extract"
+	"qq/anapa2006/internal/telegram/keyboard"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-func isReplyToBot(update *models.Update) bool {
+func IsReplyToBot(update *models.Update) bool {
 	return update.Message != nil && update.Message.ReplyToMessage != nil
 }
 
-func handlePendingReply(st *store.Store) bot.HandlerFunc {
+func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		lang := langFromContext(ctx)
+		lang := extract.Lang(ctx)
 		chatID := update.Message.Chat.ID
 		promptID := int64(update.Message.ReplyToMessage.ID)
 
@@ -40,8 +42,10 @@ func handlePendingReply(st *store.Store) bot.HandlerFunc {
 
 		switch pending.Action {
 		case "awaiting_text":
+			formatted := entitiesToHTML(update.Message.Text, update.Message.Entities)
+
 			if err := st.UpdateDraftText(ctx, db.UpdateDraftTextParams{
-				ID: pending.DraftID, FinalText: update.Message.Text,
+				ID: pending.DraftID, FinalText: formatted,
 			}); err != nil {
 				slog.LogAttrs(
 					ctx, slog.LevelError,
@@ -63,7 +67,7 @@ func handlePendingReply(st *store.Store) bot.HandlerFunc {
 				)
 			}
 
-			kb := scheduleKeyboard(pending.DraftID, pending.Origin, lang)
+			kb := keyboard.ScheduleKeyboard(pending.DraftID, pending.Origin, lang)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        i18n.T(lang, i18n.SchedulePrompt, update.Message.Text),

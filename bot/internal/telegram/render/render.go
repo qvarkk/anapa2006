@@ -1,10 +1,12 @@
-package telegram
+package render
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
+	"qq/anapa2006/internal/telegram/extract"
+	"qq/anapa2006/internal/telegram/pagination"
 	"strings"
 	"time"
 
@@ -18,13 +20,21 @@ const (
 	truncateLength = 50
 )
 
-type listedPost struct {
+type RenderedPost struct {
 	ID          int64
 	Channel     string
 	Link        string
 	PublishedAt time.Time
 	Snippet     string
 	Status      string
+	MediaCounts map[string]int
+}
+
+type RenderedSchedule struct {
+	ID          int64
+	ScheduledAt time.Time
+	Status      string
+	Text        string
 	MediaCounts map[string]int
 }
 
@@ -45,17 +55,17 @@ type renderPayload struct {
 	BackCallback   string
 }
 
-type renderPostsPayload struct {
+type PostListPayload struct {
 	renderPayload
-	Posts []listedPost
+	Posts []RenderedPost
 }
 
-type renderScheduledPayload struct {
+type ScheduledListPayload struct {
 	renderPayload
-	Scheduled []listedSchedule
+	Scheduled []RenderedSchedule
 }
 
-func renderPostListPage(ctx context.Context, payload renderPostsPayload) {
+func PostListPage(ctx context.Context, payload PostListPayload) {
 	var sb strings.Builder
 	sb.WriteString(i18n.T(payload.Lang, i18n.PostListHeader, payload.Total))
 	sb.WriteString("\n\n")
@@ -63,20 +73,20 @@ func renderPostListPage(ctx context.Context, payload renderPostsPayload) {
 	var rows [][]models.InlineKeyboardButton
 	for _, p := range payload.Posts {
 		sb.WriteString(i18n.T(payload.Lang, i18n.PostListEntry,
-			p.ID, p.Channel, p.PublishedAt.Format("02.01.2006 15:04"), postStatusLabel(payload.Lang, p.Status),
-			truncate(stripTagsForPreview(p.Snippet), truncateLength), attachmentsSummary(p.MediaCounts),
+			p.ID, p.Channel, p.PublishedAt.Format("02.01.2006 15:04"), PostStatusLabel(payload.Lang, p.Status),
+			truncate(stripTagsForPreview(p.Snippet), truncateLength), AttachmentsSummary(p.MediaCounts),
 		))
 		sb.WriteString("\n\n")
 		rows = append(rows, []models.InlineKeyboardButton{
 			{Text: i18n.T(payload.Lang, i18n.BtnSelectPost, p.ID), CallbackData: payload.SelectCallback(p.ID)},
 		})
 	}
-	rows = append(rows, buildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
+	rows = append(rows, pagination.BuildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
 	rows = append(rows, []models.InlineKeyboardButton{
 		{Text: i18n.T(payload.Lang, i18n.BtnBack), CallbackData: payload.BackCallback},
 	})
 
-	chatID, msgID := callbackTarget(payload.Update)
+	chatID, msgID := extract.CallbackTarget(payload.Update)
 	if _, err := payload.Bot.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID: chatID, MessageID: msgID, Text: sb.String(),
 		ReplyMarkup: &models.InlineKeyboardMarkup{InlineKeyboard: rows},
@@ -93,22 +103,7 @@ func renderPostListPage(ctx context.Context, payload renderPostsPayload) {
 	}
 }
 
-func postStatusLabel(lang i18n.Lang, status string) string {
-	switch status {
-	case "new":
-		return i18n.T(lang, i18n.PostStatusNew)
-	case "skipped":
-		return i18n.T(lang, i18n.PostStatusSkipped)
-	case "scheduled":
-		return i18n.T(lang, i18n.PostStatusScheduled)
-	case "sent":
-		return i18n.T(lang, i18n.PostStatusSent)
-	default:
-		return status
-	}
-}
-
-func renderScheduleListPage(ctx context.Context, payload renderScheduledPayload) {
+func ScheduleListPage(ctx context.Context, payload ScheduledListPayload) {
 	var sb strings.Builder
 	sb.WriteString(i18n.T(payload.Lang, i18n.ScheduledListHeader, payload.Total))
 	sb.WriteString("\n\n")
@@ -116,20 +111,20 @@ func renderScheduleListPage(ctx context.Context, payload renderScheduledPayload)
 	var rows [][]models.InlineKeyboardButton
 	for _, s := range payload.Scheduled {
 		sb.WriteString(i18n.T(payload.Lang, i18n.ScheduledListEntry,
-			s.ID, s.ScheduledAt.Format("02.01.2006 15:04"), scheduleStatusLabel(payload.Lang, s.Status),
-			truncate(stripTagsForPreview(s.Text), truncateLength), attachmentsSummary(s.MediaCounts),
+			s.ID, s.ScheduledAt.Format("02.01.2006 15:04"), ScheduleStatusLabel(payload.Lang, s.Status),
+			truncate(stripTagsForPreview(s.Text), truncateLength), AttachmentsSummary(s.MediaCounts),
 		))
 		sb.WriteString("\n\n")
 		rows = append(rows, []models.InlineKeyboardButton{
 			{Text: i18n.T(payload.Lang, i18n.BtnSelectSchedule, s.ID), CallbackData: payload.SelectCallback(s.ID)},
 		})
 	}
-	rows = append(rows, buildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
+	rows = append(rows, pagination.BuildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
 	rows = append(rows, []models.InlineKeyboardButton{
 		{Text: i18n.T(payload.Lang, i18n.BtnBack), CallbackData: payload.BackCallback},
 	})
 
-	chatID, msgID := callbackTarget(payload.Update)
+	chatID, msgID := extract.CallbackTarget(payload.Update)
 	if _, err := payload.Bot.EditMessageText(ctx, &bot.EditMessageTextParams{
 		ChatID: chatID, MessageID: msgID, Text: sb.String(),
 		ReplyMarkup: &models.InlineKeyboardMarkup{InlineKeyboard: rows},
@@ -146,22 +141,7 @@ func renderScheduleListPage(ctx context.Context, payload renderScheduledPayload)
 	}
 }
 
-func scheduleStatusLabel(lang i18n.Lang, status string) string {
-	switch status {
-	case "pending":
-		return i18n.T(lang, i18n.ScheduledStatusPending)
-	case "sending":
-		return i18n.T(lang, i18n.ScheduledStatusSending)
-	case "sent":
-		return i18n.T(lang, i18n.ScheduledStatusSent)
-	case "cancelled":
-		return i18n.T(lang, i18n.ScheduledStatusCancelled)
-	default:
-		return status
-	}
-}
-
-func attachmentsSummary(counts map[string]int) string {
+func AttachmentsSummary(counts map[string]int) string {
 	order := []struct{ kind, emoji string }{
 		{"photo", "📷"}, {"video", "🎥"}, {"document", "📄"}, {"animation", "🎞"},
 	}

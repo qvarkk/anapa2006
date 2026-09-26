@@ -1,4 +1,4 @@
-package telegram
+package middleware
 
 import (
 	"context"
@@ -6,15 +6,16 @@ import (
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/extract"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-func requireAllowed(st *store.Store) bot.Middleware {
+func RequireAllowed(st *store.Store) bot.Middleware {
 	return func(next bot.HandlerFunc) bot.HandlerFunc {
 		return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-			userID, chatID, ok := extractIdentity(update)
+			userID, chatID, ok := extract.Identity(update)
 			if !ok {
 				return
 			}
@@ -39,7 +40,7 @@ func requireAllowed(st *store.Store) bot.Middleware {
 				return
 			}
 
-			ctx = context.WithValue(ctx, ctxKeyLang, user.Lang)
+			ctx = context.WithValue(ctx, extract.CtxKeyLang, user.Lang)
 			next(ctx, b, update)
 		}
 	}

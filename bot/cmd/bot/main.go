@@ -12,6 +12,8 @@ import (
 	"qq/anapa2006/internal/scheduler"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram"
+	"qq/anapa2006/internal/telegram/cache"
+	"qq/anapa2006/internal/telegram/sender"
 	"syscall"
 )
 
@@ -52,11 +54,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	cacher := telegram.NewMediaCacher(b, cfg.TelegramCacheChannelChatID)
+	cacher := cache.NewMediaCacher(b, cfg.TelegramCacheChannelChatID)
 	fetcher := fetcher.NewFetcher(st, cfg.RsshubBaseUrl, cacher, nil)
 	go fetcher.Run(ctx, cfg.FetchInterval)
 
-	sender := telegram.NewSender(b)
+	sender := sender.New(b)
 	scheduler := scheduler.NewScheduler(st, sender, nil)
 	go scheduler.Run(ctx, cfg.PostInterval)
 

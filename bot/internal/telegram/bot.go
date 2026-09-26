@@ -5,6 +5,18 @@ import (
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/callback"
+	"qq/anapa2006/internal/telegram/commands"
+	"qq/anapa2006/internal/telegram/def"
+	"qq/anapa2006/internal/telegram/fetched"
+	"qq/anapa2006/internal/telegram/middleware"
+	"qq/anapa2006/internal/telegram/noop"
+	"qq/anapa2006/internal/telegram/pagination"
+	"qq/anapa2006/internal/telegram/planner"
+	"qq/anapa2006/internal/telegram/post"
+	"qq/anapa2006/internal/telegram/queue"
+	"qq/anapa2006/internal/telegram/reply"
+	"qq/anapa2006/internal/telegram/start"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -17,8 +29,8 @@ type Config struct {
 
 func New(ctx context.Context, cfg Config, st *store.Store) (*bot.Bot, error) {
 	b, err := bot.New(cfg.Token,
-		bot.WithMiddlewares(requireAllowed(st)),
-		bot.WithDefaultHandler(handleDefault),
+		bot.WithMiddlewares(middleware.RequireAllowed(st)),
+		bot.WithDefaultHandler(def.Handle),
 	)
 	if err != nil {
 		return nil, err
@@ -39,40 +51,48 @@ func New(ctx context.Context, cfg Config, st *store.Store) (*bot.Bot, error) {
 
 func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	// Posts edit match func
-	b.RegisterHandlerMatchFunc(isReplyToBot, handlePendingReply(st))
+	b.RegisterHandlerMatchFunc(reply.IsReplyToBot, reply.HandlePendingReply(st))
 
 	// Start
-	b.RegisterHandler(bot.HandlerTypeMessageText, string(commandStart), bot.MatchTypeExact, handleStartCommand)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, string(menu), bot.MatchTypeExact, handleOpenMenuCallback)
+	b.RegisterHandler(bot.HandlerTypeMessageText, commands.Start, bot.MatchTypeExact, start.HandleCommand)
+	registerExactCallback(b, callback.Start, start.HandleCallback)
 
 	// Common
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, noop, bot.MatchTypeExact, handleNoop)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, firstPage, bot.MatchTypeExact, handleFirstPage)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, lastPage, bot.MatchTypeExact, handleLastPage)
+	registerExactCallback(b, callback.Noop, noop.Handle)
+	registerExactCallback(b, callback.FirstPage, pagination.HandleFirstPage)
+	registerExactCallback(b, callback.LastPage, pagination.HandleLastPage)
 
 	// Fetch
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, fetch, bot.MatchTypeExact, handleFetch)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "grp:p:", bot.MatchTypePrefix, handleFetchChannels(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "grp:c:", bot.MatchTypePrefix, handleFetchChannelPosts(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "lat:", bot.MatchTypePrefix, handleFetchLatest(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "post:", bot.MatchTypePrefix, handlePostDetail(st))
+	registerExactCallback(b, callback.Fetch, fetched.HandleFetch)
+	registerPrefixCallback(b, callback.FetchChannelsMatch, fetched.HandleFetchChannels(st))
+	registerPrefixCallback(b, callback.FetchChannelPostsMatch, fetched.HandleFetchChannelPosts(st))
+	registerPrefixCallback(b, callback.FetchLatestMatch, fetched.HandleFetchLatest(st))
+	registerPrefixCallback(b, callback.FetchPostMatch, post.HandlePostDetail(st))
 
-	// Scheduled
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, scheduled, bot.MatchTypeExact, handleScheduled)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:list:", bot.MatchTypePrefix, handleScheduledList(st))
+	// Queue
+	registerExactCallback(b, callback.Scheduled, queue.HandleScheduled)
+	registerPrefixCallback(b, callback.ScheduledListMatch, queue.HandleScheduledList(st))
 
-	// Schedule
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:use:", bot.MatchTypePrefix, handleScheduleUse(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:edit:", bot.MatchTypePrefix, handleScheduleEdit(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:set:", bot.MatchTypePrefix, handleScheduleSkip(st))
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "sched:create:", bot.MatchTypePrefix, handleScheduleCreate(st, channelID))
+	// Planner
+	registerPrefixCallback(b, callback.ScheduleUseMatch, planner.HandleScheduleUse(st))
+	registerPrefixCallback(b, callback.ScheduleEditMatch, planner.HandleScheduleEdit(st))
+	registerPrefixCallback(b, callback.ScheduleSkipMatch, planner.HandleScheduleSkip(st))
+	registerPrefixCallback(b, callback.ScheduleCreateMatch, planner.HandleScheduleCreate(st, channelID))
+}
+
+func registerExactCallback(b *bot.Bot, callback string, f bot.HandlerFunc) {
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, callback, bot.MatchTypeExact, f)
+}
+
+func registerPrefixCallback(b *bot.Bot, prefix string, f bot.HandlerFunc) {
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, prefix, bot.MatchTypePrefix, f)
 }
 
 func setCommandsMenu(ctx context.Context, b *bot.Bot) error {
 	// TODO: localize for multiple languages (at least RU, EN)
 	_, err := b.SetMyCommands(ctx, &bot.SetMyCommandsParams{
 		Commands: []models.BotCommand{
-			{Command: string(commandStart), Description: i18n.T(i18n.DefaultLang, i18n.CommandStart)},
+			{Command: string(commands.Start), Description: i18n.T(i18n.DefaultLang, i18n.CommandStart)},
 		},
 	})
 	return err

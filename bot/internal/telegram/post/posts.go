@@ -74,9 +74,9 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 		)
 
 		kb := &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: callback.Format(callback.ScheduleUse, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: callback.Format(callback.ScheduleEdit, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: callback.Format(callback.ScheduleSkip, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: callback.Format(callback.PlannerUse, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: callback.Format(callback.PlannerEdit, postID, callbackData)}},
+			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: callback.Format(callback.PlannerSkip, postID, callbackData)}},
 			{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
 		}}
 

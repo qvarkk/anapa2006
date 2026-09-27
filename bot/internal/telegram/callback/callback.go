@@ -18,47 +18,47 @@ const (
 
 	Start = "start"
 
-	Fetch     = "list:fetched"
-	Scheduled = "list:scheduled"
+	Fetched = "menu:fetched"
+	Queued  = "menu:queued"
 
 	// lat:<page>
-	FetchLatestMatch = "lat:"
-	FetchLatest      = FetchLatestMatch + "%d"
+	FetchedLatestPrefix = "lat:"
+	FetchedLatest       = FetchedLatestPrefix + "%d"
 
 	// grp:p:<page>
-	FetchChannelsMatch = "grp:p:"
-	FetchChannels      = FetchChannelsMatch + "%d"
+	FetchedChannelsPrefix = "grp:p:"
+	FetchedChannels       = FetchedChannelsPrefix + "%d"
 	// grp:c:<source_id>:<post_page>:<group_page>
-	FetchChannelPostsMatch = "grp:c:"
-	FetchChannelPosts      = FetchChannelPostsMatch + "%d:%d:%d"
+	FetchedChannelPostsPrefix = "grp:c:"
+	FetchedChannelPosts       = FetchedChannelPostsPrefix + "%d:%d:%d"
 
 	// post:<post_id>:<prev_callback>
-	FetchPostMatch = "post:"
-	FetchPost      = FetchPostMatch + "%d:%s"
+	FetchedPostMatch = "post:"
+	FetchedPost      = FetchedPostMatch + "%d:%s"
 
 	// sched::<page>
-	ScheduledListMatch = "sched:list:"
-	ScheduledList      = ScheduledListMatch + "%d"
-	ScheduledSentMatch = "sched:sent:"
-	ScheduledSent      = ScheduledSentMatch + "%d"
+	QueueListPrefix = "q:list:"
+	QueueList       = QueueListPrefix + "%d"
+	QueueSentPrefix = "q:sent:"
+	QueueSent       = QueueSentPrefix + "%d"
 
 	// sched::<post_id>:<prev_callback>
-	ScheduleUseMatch  = "sched:use:"
-	ScheduleUse       = ScheduleUseMatch + "%d:%s"
-	ScheduleEditMatch = "sched:edit:"
-	ScheduleEdit      = ScheduleEditMatch + "%d:%s"
-	ScheduleSkipMatch = "sched:skip:"
-	ScheduleSkip      = ScheduleSkipMatch + "%d:%s"
+	PlannerUsePrefix  = "plan:use:"
+	PlannerUse        = PlannerUsePrefix + "%d:%s"
+	PlannerEditPrefix = "plan:edit:"
+	PlannerEdit       = PlannerEditPrefix + "%d:%s"
+	PlannerSkipPrefix = "plan:skip:"
+	PlannerSkip       = PlannerSkipPrefix + "%d:%s"
 
 	// sched:get:<draft_id>:<prev_callback>
-	ScheduleInputMatch = "sched:get:"
-	ScheduleInput      = ScheduleInputMatch + "%d:%s"
+	PlannerInputPrefix = "plan:get:"
+	PlannerInput       = PlannerInputPrefix + "%d:%s"
 	// sched:custom:<draft_id>:<prev_callback>
-	ScheduleCreateCustomMatch = "sched:custom:"
-	ScheduleCreateCustom      = ScheduleCreateCustomMatch + "%d:%s"
+	PlannerCreateCustomPrefix = "plan:custom:"
+	PlannerCreateCustom       = PlannerCreateCustomPrefix + "%d:%s"
 	// sched:create:<draft_id>:<dur>:<prev_callback>
-	ScheduleCreateMatch = "sched:create:"
-	ScheduleCreate      = ScheduleCreateMatch + "%d:%s:%s"
+	PlannerCreatePrefix = "plan:create:"
+	PlannerCreate       = PlannerCreatePrefix + "%d:%s:%s"
 )
 
 const (

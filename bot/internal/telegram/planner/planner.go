@@ -19,7 +19,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func HandleScheduleUse(st *store.Store) bot.HandlerFunc {
+func HandlePlannerUse(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 		lang := extract.Lang(ctx)
@@ -79,7 +79,7 @@ func HandleScheduleUse(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func HandleScheduleEdit(st *store.Store) bot.HandlerFunc {
+func HandlePlannerEdit(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 		lang := extract.Lang(ctx)
@@ -156,7 +156,7 @@ func HandleScheduleEdit(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func HandleScheduleSkip(st *store.Store) bot.HandlerFunc {
+func HandlePlannerSkip(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 		lang := extract.Lang(ctx)
@@ -204,7 +204,7 @@ func HandleScheduleSkip(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func HandleScheduleCreate(st *store.Store, channelID int64) bot.HandlerFunc {
+func HandlePlannerCreate(st *store.Store, channelID int64) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 

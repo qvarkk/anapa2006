@@ -20,15 +20,15 @@ const (
 	ChannelsPerPage = 5
 )
 
-func HandleFetch(ctx context.Context, b *bot.Bot, update *models.Update) {
+func HandleFetched(ctx context.Context, b *bot.Bot, update *models.Update) {
 	callback.Ack(ctx, b, update)
 
 	lang := extract.Lang(ctx)
 	chatID, msgID := extract.CallbackTarget(update)
 
 	kb := &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-		{{Text: i18n.T(lang, i18n.BtnFetchChannels), CallbackData: callback.Format(callback.FetchChannels, 0)}},
-		{{Text: i18n.T(lang, i18n.BtnFetchLatest), CallbackData: callback.Format(callback.FetchLatest, 0)}},
+		{{Text: i18n.T(lang, i18n.BtnFetchChannels), CallbackData: callback.Format(callback.FetchedChannels, 0)}},
+		{{Text: i18n.T(lang, i18n.BtnFetchLatest), CallbackData: callback.Format(callback.FetchedLatest, 0)}},
 		{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Start}},
 	}}
 	if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
@@ -45,7 +45,7 @@ func HandleFetch(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 }
 
-func HandleFetchChannels(st *store.Store) bot.HandlerFunc {
+func HandleFetchedChannels(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 
@@ -80,21 +80,21 @@ func HandleFetchChannels(st *store.Store) bot.HandlerFunc {
 		for _, s := range sources {
 			label := i18n.TN(lang, i18n.ChannelNewCount, int(s.NewCount), s.ChannelHandle)
 			rows = append(rows, []models.InlineKeyboardButton{
-				{Text: label, CallbackData: callback.Format(callback.FetchChannelPosts, s.ID, 0, page)},
+				{Text: label, CallbackData: callback.Format(callback.FetchedChannelPosts, s.ID, 0, page)},
 			})
 		}
 
 		prev, next := callback.FirstPage, callback.LastPage
 		if page > 0 {
-			prev = callback.Format(callback.FetchChannels, page-1)
+			prev = callback.Format(callback.FetchedChannels, page-1)
 		}
 		if page < tp-1 {
-			next = callback.Format(callback.FetchChannels, page+1)
+			next = callback.Format(callback.FetchedChannels, page+1)
 		}
 
 		rows = append(rows, pagination.BuildPaginationRow(page, tp, prev, next))
 		rows = append(rows, []models.InlineKeyboardButton{
-			{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Fetch},
+			{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Fetched},
 		})
 
 		chatID, msgID := extract.CallbackTarget(update)
@@ -114,7 +114,7 @@ func HandleFetchChannels(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func HandleFetchLatest(st *store.Store) bot.HandlerFunc {
+func HandleFetchedLatest(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 
@@ -155,19 +155,19 @@ func HandleFetchLatest(st *store.Store) bot.HandlerFunc {
 
 		prev, next := callback.FirstPage, callback.LastPage
 		if page > 0 {
-			prev = callback.Format(callback.FetchLatest, page-1)
+			prev = callback.Format(callback.FetchedLatest, page-1)
 		}
 		if page < tp-1 {
-			next = callback.Format(callback.FetchLatest, page+1)
+			next = callback.Format(callback.FetchedLatest, page+1)
 		}
 
 		payload := render.PostListPayload{
 			Bot: b, Update: update, Lang: lang, Page: page, TotalPages: tp, Total: int(total),
-			PrevCallback: prev, NextCallback: next, Posts: posts, BackCallback: callback.Fetch,
+			PrevCallback: prev, NextCallback: next, Posts: posts, BackCallback: callback.Fetched,
 			SelectCallback: func(id int64) string {
 				return callback.Format(
-					callback.FetchPost, id,
-					callback.Format(callback.FetchLatest, page),
+					callback.FetchedPost, id,
+					callback.Format(callback.FetchedLatest, page),
 				)
 			},
 		}
@@ -176,7 +176,7 @@ func HandleFetchLatest(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-func HandleFetchChannelPosts(st *store.Store) bot.HandlerFunc {
+func HandleFetchedChannelPosts(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 		lang := extract.Lang(ctx)
@@ -222,20 +222,20 @@ func HandleFetchChannelPosts(st *store.Store) bot.HandlerFunc {
 
 		prev, next := callback.FirstPage, callback.LastPage
 		if postPage > 0 {
-			prev = callback.Format(callback.FetchChannelPosts, sourceID, postPage-1, grpPage)
+			prev = callback.Format(callback.FetchedChannelPosts, sourceID, postPage-1, grpPage)
 		}
 		if postPage < tp-1 {
-			next = callback.Format(callback.FetchChannelPosts, sourceID, postPage+1, grpPage)
+			next = callback.Format(callback.FetchedChannelPosts, sourceID, postPage+1, grpPage)
 		}
 
 		payload := render.PostListPayload{
 			Bot: b, Update: update, Lang: lang, Page: postPage, TotalPages: tp, Total: int(total),
 			PrevCallback: prev, NextCallback: next, Posts: posts,
-			BackCallback: callback.Format(callback.FetchChannelPosts, sourceID, postPage, grpPage),
+			BackCallback: callback.Format(callback.FetchedChannelPosts, sourceID, postPage, grpPage),
 			SelectCallback: func(id int64) string {
 				return callback.Format(
-					callback.FetchPost, id,
-					callback.Format(callback.FetchChannelPosts, sourceID, postPage, grpPage),
+					callback.FetchedPost, id,
+					callback.Format(callback.FetchedChannelPosts, sourceID, postPage, grpPage),
 				)
 			},
 		}

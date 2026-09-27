@@ -63,21 +63,21 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerExactCallback(b, callback.LastPage, pagination.HandleLastPage)
 
 	// Fetch
-	registerExactCallback(b, callback.Fetch, fetched.HandleFetch)
-	registerPrefixCallback(b, callback.FetchChannelsMatch, fetched.HandleFetchChannels(st))
-	registerPrefixCallback(b, callback.FetchChannelPostsMatch, fetched.HandleFetchChannelPosts(st))
-	registerPrefixCallback(b, callback.FetchLatestMatch, fetched.HandleFetchLatest(st))
-	registerPrefixCallback(b, callback.FetchPostMatch, post.HandlePostDetail(st))
+	registerExactCallback(b, callback.Fetched, fetched.HandleFetched)
+	registerPrefixCallback(b, callback.FetchedChannelsPrefix, fetched.HandleFetchedChannels(st))
+	registerPrefixCallback(b, callback.FetchedChannelPostsPrefix, fetched.HandleFetchedChannelPosts(st))
+	registerPrefixCallback(b, callback.FetchedLatestPrefix, fetched.HandleFetchedLatest(st))
+	registerPrefixCallback(b, callback.FetchedPostMatch, post.HandlePostDetail(st))
 
 	// Queue
-	registerExactCallback(b, callback.Scheduled, queue.HandleScheduled)
-	registerPrefixCallback(b, callback.ScheduledListMatch, queue.HandleScheduledList(st))
+	registerExactCallback(b, callback.Queued, queue.HandleQueued)
+	registerPrefixCallback(b, callback.QueueListPrefix, queue.HandleQueueList(st))
 
 	// Planner
-	registerPrefixCallback(b, callback.ScheduleUseMatch, planner.HandleScheduleUse(st))
-	registerPrefixCallback(b, callback.ScheduleEditMatch, planner.HandleScheduleEdit(st))
-	registerPrefixCallback(b, callback.ScheduleSkipMatch, planner.HandleScheduleSkip(st))
-	registerPrefixCallback(b, callback.ScheduleCreateMatch, planner.HandleScheduleCreate(st, channelID))
+	registerPrefixCallback(b, callback.PlannerUsePrefix, planner.HandlePlannerUse(st))
+	registerPrefixCallback(b, callback.PlannerEditPrefix, planner.HandlePlannerEdit(st))
+	registerPrefixCallback(b, callback.PlannerSkipPrefix, planner.HandlePlannerSkip(st))
+	registerPrefixCallback(b, callback.PlannerCreatePrefix, planner.HandlePlannerCreate(st, channelID))
 }
 
 func registerExactCallback(b *bot.Bot, callback string, f bot.HandlerFunc) {

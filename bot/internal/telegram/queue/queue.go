@@ -19,7 +19,7 @@ const (
 	RecordsPerPage = 5
 )
 
-func HandleScheduled(ctx context.Context, b *bot.Bot, update *models.Update) {
+func HandleQueued(ctx context.Context, b *bot.Bot, update *models.Update) {
 	callback.Ack(ctx, b, update)
 	lang := extract.Lang(ctx)
 	chatID, msgID := extract.CallbackTarget(update)
@@ -28,8 +28,8 @@ func HandleScheduled(ctx context.Context, b *bot.Bot, update *models.Update) {
 		ChatID: chatID, MessageID: msgID, Text: i18n.T(lang, i18n.Scheduled),
 		ReplyMarkup: &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{{Text: i18n.T(lang, i18n.BtnScheduledList), CallbackData: callback.Format(callback.ScheduledList, 0)}},
-				{{Text: i18n.T(lang, i18n.BtnScheduledSent), CallbackData: callback.Format(callback.ScheduledSent, 0)}},
+				{{Text: i18n.T(lang, i18n.BtnScheduledList), CallbackData: callback.Format(callback.QueueList, 0)}},
+				{{Text: i18n.T(lang, i18n.BtnScheduledSent), CallbackData: callback.Format(callback.QueueSent, 0)}},
 				{{Text: i18n.T(lang, i18n.BtnScheduledSettings), CallbackData: callback.Noop}},
 				{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Start}},
 			},
@@ -43,7 +43,7 @@ func HandleScheduled(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 }
 
-func HandleScheduledList(st *store.Store) bot.HandlerFunc {
+func HandleQueueList(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
 
@@ -84,10 +84,10 @@ func HandleScheduledList(st *store.Store) bot.HandlerFunc {
 
 		prev, next := callback.FirstPage, callback.LastPage
 		if page > 0 {
-			prev = callback.Format(callback.ScheduledList, page-1)
+			prev = callback.Format(callback.QueueList, page-1)
 		}
 		if page < tp-1 {
-			next = callback.Format(callback.ScheduledList, page+1)
+			next = callback.Format(callback.QueueList, page+1)
 		}
 
 		lang := extract.Lang(ctx)
@@ -95,7 +95,7 @@ func HandleScheduledList(st *store.Store) bot.HandlerFunc {
 		payload := render.ScheduledListPayload{
 			Bot: b, Update: update, Lang: lang, Page: page, TotalPages: tp, Total: int(total),
 			PrevCallback: prev, NextCallback: next, Scheduled: schedules,
-			BackCallback: callback.Scheduled,
+			BackCallback: callback.Queued,
 			SelectCallback: func(id int64) string {
 				// TODO: add read select callbacks
 				return callback.Noop

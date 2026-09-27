@@ -66,11 +66,12 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerPrefixCallback(b, callback.FetchedChannelsPrefix, fetched.HandleFetchedChannels(st))
 	registerPrefixCallback(b, callback.FetchedChannelPostsPrefix, fetched.HandleFetchedChannelPosts(st))
 	registerPrefixCallback(b, callback.FetchedLatestPrefix, fetched.HandleFetchedLatest(st))
-	registerPrefixCallback(b, callback.FetchedPostMatch, fetched.HandlePostDetail(st))
+	registerPrefixCallback(b, callback.FetchedPostPrefix, fetched.HandlePostDetail(st))
 
 	// Queue
 	registerExactCallback(b, callback.Queued, queue.HandleQueued)
 	registerPrefixCallback(b, callback.QueueListPrefix, queue.HandleQueueList(st))
+	registerPrefixCallback(b, callback.QueueSchedulePrefix, queue.HandleScheduleDetail(st))
 
 	// Planner
 	registerPrefixCallback(b, callback.PlannerUsePrefix, planner.HandlePlannerUse(st))

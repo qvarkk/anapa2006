@@ -26,5 +26,12 @@ SELECT COUNT(*) FROM schedule;
 -- name: ListScheduledLatest :many
 SELECT s.*, d.final_text FROM schedule s
 JOIN drafts d ON d.id = s.draft_id
+WHERE s.status <> 'sent'
 ORDER BY s.scheduled_at DESC
 LIMIT ? OFFSET ?;
+
+-- name: GetScheduleWithDraftData :one
+SELECT s.*, d.final_text, p.external_id FROM schedule s
+JOIN drafts d ON d.id = s.draft_id
+JOIN posts p on p.id = d.post_id
+WHERE s.id = ?;

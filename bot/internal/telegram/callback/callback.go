@@ -33,16 +33,20 @@ const (
 	FetchedChannelPosts       = FetchedChannelPostsPrefix + "%d:%d:%d"
 
 	// post:<post_id>:<prev_callback>
-	FetchedPostMatch = "post:"
-	FetchedPost      = FetchedPostMatch + "%d:%s"
+	FetchedPostPrefix = "post:"
+	FetchedPost       = FetchedPostPrefix + "%d:%s"
 
-	// sched::<page>
+	// q::<page>
 	QueueListPrefix = "q:list:"
 	QueueList       = QueueListPrefix + "%d"
 	QueueSentPrefix = "q:sent:"
 	QueueSent       = QueueSentPrefix + "%d"
 
-	// sched::<post_id>:<prev_callback>
+	// q:<sched_id>:<prev_callback>
+	QueueSchedulePrefix = "sched:"
+	QueueSchedule       = QueueSchedulePrefix + "%d:%s"
+
+	// plan::<post_id>:<prev_callback>
 	PlannerUsePrefix  = "plan:use:"
 	PlannerUse        = PlannerUsePrefix + "%d:%s"
 	PlannerEditPrefix = "plan:edit:"

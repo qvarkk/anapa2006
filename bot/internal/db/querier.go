@@ -32,6 +32,7 @@ type Querier interface {
 	GetPendingReply(ctx context.Context, arg GetPendingReplyParams) (PendingReply, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
+	GetScheduleWithDraftData(ctx context.Context, id int64) (GetScheduleWithDraftDataRow, error)
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
 	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)

@@ -61,6 +61,40 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 	return err
 }
 
+const getScheduleWithDraftData = `-- name: GetScheduleWithDraftData :one
+SELECT s.id, s.draft_id, s.target_chat_id, s.scheduled_at, s.status, s.sent_at, d.final_text, p.external_id FROM schedule s
+JOIN drafts d ON d.id = s.draft_id
+JOIN posts p on p.id = d.post_id
+WHERE s.id = ?
+`
+
+type GetScheduleWithDraftDataRow struct {
+	ID           int64        `json:"id"`
+	DraftID      int64        `json:"draft_id"`
+	TargetChatID int64        `json:"target_chat_id"`
+	ScheduledAt  time.Time    `json:"scheduled_at"`
+	Status       string       `json:"status"`
+	SentAt       sql.NullTime `json:"sent_at"`
+	FinalText    string       `json:"final_text"`
+	ExternalID   string       `json:"external_id"`
+}
+
+func (q *Queries) GetScheduleWithDraftData(ctx context.Context, id int64) (GetScheduleWithDraftDataRow, error) {
+	row := q.db.QueryRowContext(ctx, getScheduleWithDraftData, id)
+	var i GetScheduleWithDraftDataRow
+	err := row.Scan(
+		&i.ID,
+		&i.DraftID,
+		&i.TargetChatID,
+		&i.ScheduledAt,
+		&i.Status,
+		&i.SentAt,
+		&i.FinalText,
+		&i.ExternalID,
+	)
+	return i, err
+}
+
 const listDuePending = `-- name: ListDuePending :many
 SELECT id, draft_id, target_chat_id, scheduled_at, status, sent_at FROM schedule WHERE scheduled_at <= ? ORDER BY scheduled_at DESC
 `
@@ -98,6 +132,7 @@ func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]
 const listScheduledLatest = `-- name: ListScheduledLatest :many
 SELECT s.id, s.draft_id, s.target_chat_id, s.scheduled_at, s.status, s.sent_at, d.final_text FROM schedule s
 JOIN drafts d ON d.id = s.draft_id
+WHERE s.status <> 'sent'
 ORDER BY s.scheduled_at DESC
 LIMIT ? OFFSET ?
 `

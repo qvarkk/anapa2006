@@ -97,8 +97,10 @@ func HandleQueueList(st *store.Store) bot.HandlerFunc {
 			PrevCallback: prev, NextCallback: next, Scheduled: schedules,
 			BackCallback: callback.Queued,
 			SelectCallback: func(id int64) string {
-				// TODO: add read select callbacks
-				return callback.Noop
+				return callback.Format(
+					callback.QueueSchedule, id,
+					callback.Format(callback.QueueList, page),
+				)
 			},
 		}
 

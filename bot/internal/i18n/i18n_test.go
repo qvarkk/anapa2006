@@ -40,7 +40,7 @@ var allSimpleKeys = []Key{
 	Scheduled,
 	ScheduledListHeader,
 	ScheduledListEntry,
-	ScheduledDetails,
+	ScheduledDetail,
 	BtnSelectSchedule,
 
 	BtnScheduledList,

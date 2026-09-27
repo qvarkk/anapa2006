@@ -98,11 +98,11 @@ simple:
     🖼️ Вложения: %[3]s
     🔗 <a href="%[4]s">Ссылка на исходный пост</a>
 
-    <blockquote>%[4]s</blockquote>
+    <blockquote>%[5]s</blockquote>
   btn_select_schedule: "🫆 ID %d"
   #
   scheduled_status_pending: "⏲️ Ожидает публикации"
-  scheduled_status_sending: "⏳ Отправляется (или зависло)"
+  scheduled_status_sending: "⏳ Отправляется (или ошибка)"
   scheduled_status_sent: "📨 Отправлено"
   scheduled_status_cancelled: "🛑 Отменено"
   #

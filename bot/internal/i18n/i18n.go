@@ -75,7 +75,7 @@ const (
 	Scheduled           Key = "scheduled"
 	ScheduledListHeader Key = "scheduled_list_header"
 	ScheduledListEntry  Key = "scheduled_list_entry"
-	ScheduledDetails    Key = "scheduled_details"
+	ScheduledDetail     Key = "scheduled_details"
 	BtnSelectSchedule   Key = "btn_select_schedule"
 
 	// Scheduled buttons

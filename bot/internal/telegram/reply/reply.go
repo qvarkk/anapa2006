@@ -70,7 +70,7 @@ func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 			kb := keyboard.ScheduleKeyboard(pending.DraftID, pending.Origin, lang)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
-				Text:        i18n.T(lang, i18n.SchedulePrompt, update.Message.Text),
+				Text:        i18n.T(lang, i18n.SchedulePrompt, formatted),
 				ReplyMarkup: kb, ParseMode: models.ParseModeHTML,
 				LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: bot.True()},
 			})

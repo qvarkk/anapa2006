@@ -1,6 +1,7 @@
 package reply
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"unicode/utf16"
@@ -66,9 +67,9 @@ func entitiesToHTML(text string, entities []models.MessageEntity) string {
 					toReopen = append(toReopen, top)
 				}
 
-				for j := len(toReopen) - 1; j >= 0; j-- {
-					sb.WriteString(openTag(toReopen[j]))
-					stack = append(stack, toReopen[j])
+				for _, t := range slices.Backward(toReopen) {
+					sb.WriteString(openTag(t))
+					stack = append(stack, t)
 				}
 			}
 		}
@@ -121,6 +122,8 @@ func openTag(e models.MessageEntity) string {
 		return `<a href="` + html.EscapeString(e.URL) + `">`
 	case models.MessageEntityTypeBlockquote:
 		return "<blockquote>"
+	case models.MessageEntityTypeCustomEmoji:
+		return `<tg-emoji emoji-id="` + html.EscapeString(e.CustomEmojiID) + `">`
 	default:
 		return ""
 	}
@@ -146,6 +149,8 @@ func closeTag(e models.MessageEntity) string {
 		return "</a>"
 	case models.MessageEntityTypeBlockquote:
 		return "</blockquote>"
+	case models.MessageEntityTypeCustomEmoji:
+		return "</tg-emoji>"
 	default:
 		return ""
 	}

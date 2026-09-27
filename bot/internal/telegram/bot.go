@@ -13,7 +13,6 @@ import (
 	"qq/anapa2006/internal/telegram/noop"
 	"qq/anapa2006/internal/telegram/pagination"
 	"qq/anapa2006/internal/telegram/planner"
-	"qq/anapa2006/internal/telegram/post"
 	"qq/anapa2006/internal/telegram/queue"
 	"qq/anapa2006/internal/telegram/reply"
 	"qq/anapa2006/internal/telegram/start"
@@ -67,7 +66,7 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerPrefixCallback(b, callback.FetchedChannelsPrefix, fetched.HandleFetchedChannels(st))
 	registerPrefixCallback(b, callback.FetchedChannelPostsPrefix, fetched.HandleFetchedChannelPosts(st))
 	registerPrefixCallback(b, callback.FetchedLatestPrefix, fetched.HandleFetchedLatest(st))
-	registerPrefixCallback(b, callback.FetchedPostMatch, post.HandlePostDetail(st))
+	registerPrefixCallback(b, callback.FetchedPostMatch, fetched.HandlePostDetail(st))
 
 	// Queue
 	registerExactCallback(b, callback.Queued, queue.HandleQueued)

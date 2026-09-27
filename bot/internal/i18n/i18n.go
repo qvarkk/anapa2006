@@ -56,6 +56,7 @@ const (
 	PostStatusSkipped   Key = "post_status_skipped"
 	PostStatusScheduled Key = "post_status_scheduled"
 	PostStatusSent      Key = "post_status_sent"
+	PostStatusError     Key = "post_status_error"
 
 	// List fetched titles
 	FetchMenu         Key = "list_fetched_menu_title"

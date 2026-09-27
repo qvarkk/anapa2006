@@ -106,6 +106,40 @@ func (q *Queries) ListPostMedia(ctx context.Context, postID int64) ([]PostMedium
 	return items, nil
 }
 
+const listUncachedMediaByPostID = `-- name: ListUncachedMediaByPostID :many
+SELECT id, post_id, kind, url, file_id, position FROM post_media WHERE file_id = NULL AND post_id = ?
+`
+
+func (q *Queries) ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error) {
+	rows, err := q.db.QueryContext(ctx, listUncachedMediaByPostID, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PostMedium
+	for rows.Next() {
+		var i PostMedium
+		if err := rows.Scan(
+			&i.ID,
+			&i.PostID,
+			&i.Kind,
+			&i.Url,
+			&i.FileID,
+			&i.Position,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setPostMediaFileID = `-- name: SetPostMediaFileID :exec
 UPDATE post_media SET file_id = ? WHERE id = ?
 `

@@ -52,6 +52,7 @@ type Post struct {
 	PublishedAt sql.NullTime `json:"published_at"`
 	FetchedAt   time.Time    `json:"fetched_at"`
 	Status      string       `json:"status"`
+	RetryCount  int64        `json:"retry_count"`
 }
 
 type PostMedium struct {

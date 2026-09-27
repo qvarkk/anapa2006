@@ -9,3 +9,6 @@ SELECT kind, COUNT(*) AS cnt FROM post_media WHERE post_id = ? GROUP BY kind;
 
 -- name: SetPostMediaFileID :exec
 UPDATE post_media SET file_id = ? WHERE id = ?;
+
+-- name: ListUncachedMediaByPostID :many
+SELECT * FROM post_media WHERE file_id = NULL AND post_id = ?;

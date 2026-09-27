@@ -19,6 +19,7 @@ import (
 const (
 	HttpClientTimeout = 60 * time.Second
 	DodgeSleepTimeout = 1200 * time.Millisecond
+	MaxRetryCount     = 5
 )
 
 type MediaCacher interface {
@@ -89,7 +90,36 @@ func (f *Fetcher) Tick(ctx context.Context) {
 				slog.String("channel", src.ChannelHandle),
 				slog.String("error", err.Error()),
 			)
-			continue
+		}
+	}
+
+	retrieable, err := f.store.GetRetrieablePosts(ctx, MaxRetryCount)
+	if err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelError,
+			"get retrieable posts",
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	for _, post := range retrieable {
+		if err := f.retryCachingPostMedia(ctx, post.ID); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"failed to retry cache post media",
+				slog.Int64("post_id", post.ID),
+				slog.String("error", err.Error()),
+			)
+
+			if err = f.store.IncrementRetryCount(ctx, post.ID); err != nil {
+				slog.LogAttrs(
+					ctx, slog.LevelWarn,
+					"failed to increment retry count",
+					slog.Int64("post_id", post.ID),
+					slog.String("error", err.Error()),
+				)
+			}
 		}
 	}
 }
@@ -110,7 +140,7 @@ func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelWarn,
-				"parse description",
+				"failed to parse description",
 				slog.String("channel", src.ChannelHandle),
 				slog.String("guid", item.GUID),
 				slog.String("error", err.Error()),
@@ -155,6 +185,29 @@ func (f *Fetcher) fetchSource(ctx context.Context, src db.Source) error {
 		}
 	}
 	return nil
+}
+
+func (f *Fetcher) retryCachingPostMedia(ctx context.Context, postID int64) error {
+	media, err := f.store.ListUncachedMediaByPostID(ctx, postID)
+	if err != nil {
+		return fmt.Errorf("list uncached media: %w", err)
+	}
+
+	var errs []error
+	for _, m := range media {
+		if err := f.cacheMedia(
+			ctx,
+			MediaItem{
+				URL:       m.Url,
+				MediaType: domain.MediaKind(m.Kind),
+			},
+			postID, m.ID,
+		); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func (f *Fetcher) pullChannelFeed(ctx context.Context, url string) (*RSSResponse, error) {
@@ -208,12 +261,11 @@ func (f *Fetcher) storeAndCacheMedia(ctx context.Context, postID int64, media []
 			time.Sleep(DodgeSleepTimeout)
 		}
 
-		fileID, err := f.mediaCacher.CacheMedia(ctx, string(m.MediaType), m.URL)
+		err = f.cacheMedia(ctx, m, postID, row.ID)
 		if err != nil {
-			// TODO: mark post as failed
 			slog.LogAttrs(
 				ctx, slog.LevelWarn,
-				"cache media file_id failed - URL will eventually expire",
+				"cache media failed",
 				slog.Int64("post_id", postID),
 				slog.Int64("media_id", row.ID),
 				slog.String("kind", string(m.MediaType)),
@@ -221,18 +273,25 @@ func (f *Fetcher) storeAndCacheMedia(ctx context.Context, postID int64, media []
 			)
 			continue
 		}
-
-		if err := f.store.SetPostMediaFileID(ctx, db.SetPostMediaFileIDParams{
-			ID: row.ID, FileID: sql.NullString{String: fileID, Valid: true},
-		}); err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"set post media file_id",
-				slog.Int64("media_id", row.ID),
-				slog.String("error", err.Error()),
-			)
-		}
 	}
+}
+
+func (f *Fetcher) cacheMedia(ctx context.Context, m MediaItem, postID, mediaID int64) error {
+	fileID, err := f.mediaCacher.CacheMedia(ctx, string(m.MediaType), m.URL)
+	if err != nil {
+		if dbErr := f.store.MarkPostFailed(ctx, postID); dbErr != nil {
+			return fmt.Errorf("post not marked as failed and is uncached. scheduling it will cause problems: %w: %w", dbErr, err)
+		}
+		return fmt.Errorf("post caching failed, it is marked as failed and will retry later if possible: %w", err)
+	}
+
+	if err := f.store.SetPostMediaFileID(ctx, db.SetPostMediaFileIDParams{
+		ID: mediaID, FileID: sql.NullString{String: fileID, Valid: true},
+	}); err != nil {
+		return fmt.Errorf("set post media file_id: %w", err)
+	}
+
+	return nil
 }
 
 func resolveCaption(item RSSItem, parsed string, media []MediaItem) string {

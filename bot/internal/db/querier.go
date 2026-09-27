@@ -32,7 +32,9 @@ type Querier interface {
 	GetPendingReply(ctx context.Context, arg GetPendingReplyParams) (PendingReply, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
+	GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error)
 	GetScheduleWithDraftData(ctx context.Context, id int64) (GetScheduleWithDraftDataRow, error)
+	IncrementRetryCount(ctx context.Context, id int64) error
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
 	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
@@ -40,6 +42,8 @@ type Querier interface {
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
 	ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
+	ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error)
+	MarkPostFailed(ctx context.Context, id int64) error
 	MarkPostScheduled(ctx context.Context, id int64) error
 	MarkPostSent(ctx context.Context, id int64) error
 	MarkScheduleSent(ctx context.Context, id int64) error

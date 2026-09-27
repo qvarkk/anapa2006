@@ -12,7 +12,7 @@ import (
 )
 
 const countPosts = `-- name: CountPosts :one
-SELECT COUNT(*) FROM posts
+SELECT COUNT(*) FROM posts WHERE status <> 'fetch_error'
 `
 
 func (q *Queries) CountPosts(ctx context.Context) (int64, error) {
@@ -23,7 +23,7 @@ func (q *Queries) CountPosts(ctx context.Context) (int64, error) {
 }
 
 const countPostsBySource = `-- name: CountPostsBySource :one
-SELECT COUNT(*) FROM posts WHERE source_id = ?
+SELECT COUNT(*) FROM posts WHERE source_id = ? AND status <> 'fetch_error'
 `
 
 func (q *Queries) CountPostsBySource(ctx context.Context, sourceID int64) (int64, error) {
@@ -34,7 +34,7 @@ func (q *Queries) CountPostsBySource(ctx context.Context, sourceID int64) (int64
 }
 
 const getPost = `-- name: GetPost :one
-SELECT id, source_id, external_id, raw_text, published_at, fetched_at, status FROM posts WHERE id = ?
+SELECT id, source_id, external_id, raw_text, published_at, fetched_at, status, retry_count FROM posts WHERE id = ?
 `
 
 func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
@@ -48,12 +48,13 @@ func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
 		&i.PublishedAt,
 		&i.FetchedAt,
 		&i.Status,
+		&i.RetryCount,
 	)
 	return i, err
 }
 
 const getPostWithSource = `-- name: GetPostWithSource :one
-SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, p.retry_count, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
 WHERE p.id = ?
 `
@@ -66,6 +67,7 @@ type GetPostWithSourceRow struct {
 	PublishedAt   sql.NullTime `json:"published_at"`
 	FetchedAt     time.Time    `json:"fetched_at"`
 	Status        string       `json:"status"`
+	RetryCount    int64        `json:"retry_count"`
 	ChannelHandle string       `json:"channel_handle"`
 }
 
@@ -80,15 +82,62 @@ func (q *Queries) GetPostWithSource(ctx context.Context, id int64) (GetPostWithS
 		&i.PublishedAt,
 		&i.FetchedAt,
 		&i.Status,
+		&i.RetryCount,
 		&i.ChannelHandle,
 	)
 	return i, err
 }
 
+const getRetrieablePosts = `-- name: GetRetrieablePosts :many
+SELECT id, source_id, external_id, raw_text, published_at, fetched_at, status, retry_count FROM posts WHERE status = 'fetch_error' AND retry_count < ?
+`
+
+func (q *Queries) GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, getRetrieablePosts, retryCount)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.SourceID,
+			&i.ExternalID,
+			&i.RawText,
+			&i.PublishedAt,
+			&i.FetchedAt,
+			&i.Status,
+			&i.RetryCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const incrementRetryCount = `-- name: IncrementRetryCount :exec
+UPDATE posts SET retry_count = retry_count + 1 WHERE id = ?
+`
+
+func (q *Queries) IncrementRetryCount(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, incrementRetryCount, id)
+	return err
+}
+
 const listPostsBySource = `-- name: ListPostsBySource :many
-SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, p.retry_count, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
 WHERE p.source_id = ?
+  AND p.status <> 'fetch_error'
 ORDER BY p.published_at DESC
 LIMIT ? OFFSET ?
 `
@@ -107,6 +156,7 @@ type ListPostsBySourceRow struct {
 	PublishedAt   sql.NullTime `json:"published_at"`
 	FetchedAt     time.Time    `json:"fetched_at"`
 	Status        string       `json:"status"`
+	RetryCount    int64        `json:"retry_count"`
 	ChannelHandle string       `json:"channel_handle"`
 }
 
@@ -127,6 +177,7 @@ func (q *Queries) ListPostsBySource(ctx context.Context, arg ListPostsBySourcePa
 			&i.PublishedAt,
 			&i.FetchedAt,
 			&i.Status,
+			&i.RetryCount,
 			&i.ChannelHandle,
 		); err != nil {
 			return nil, err
@@ -143,8 +194,9 @@ func (q *Queries) ListPostsBySource(ctx context.Context, arg ListPostsBySourcePa
 }
 
 const listPostsLatest = `-- name: ListPostsLatest :many
-SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, s.channel_handle FROM posts p
+SELECT p.id, p.source_id, p.external_id, p.raw_text, p.published_at, p.fetched_at, p.status, p.retry_count, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
+WHERE p.status <> 'fetch_error'
 ORDER BY p.published_at DESC
 LIMIT ? OFFSET ?
 `
@@ -162,6 +214,7 @@ type ListPostsLatestRow struct {
 	PublishedAt   sql.NullTime `json:"published_at"`
 	FetchedAt     time.Time    `json:"fetched_at"`
 	Status        string       `json:"status"`
+	RetryCount    int64        `json:"retry_count"`
 	ChannelHandle string       `json:"channel_handle"`
 }
 
@@ -182,6 +235,7 @@ func (q *Queries) ListPostsLatest(ctx context.Context, arg ListPostsLatestParams
 			&i.PublishedAt,
 			&i.FetchedAt,
 			&i.Status,
+			&i.RetryCount,
 			&i.ChannelHandle,
 		); err != nil {
 			return nil, err
@@ -195,6 +249,15 @@ func (q *Queries) ListPostsLatest(ctx context.Context, arg ListPostsLatestParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const markPostFailed = `-- name: MarkPostFailed :exec
+UPDATE posts SET status = 'fetch_error' WHERE id = ?
+`
+
+func (q *Queries) MarkPostFailed(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostFailed, id)
+	return err
 }
 
 const markPostScheduled = `-- name: MarkPostScheduled :exec
@@ -228,7 +291,7 @@ const upsertPost = `-- name: UpsertPost :one
 INSERT INTO posts (source_id, external_id, raw_text, published_at)
 VALUES (?, ?, ?, ?)
 ON CONFLICT(source_id, external_id) DO NOTHING
-RETURNING id, source_id, external_id, raw_text, published_at, fetched_at, status
+RETURNING id, source_id, external_id, raw_text, published_at, fetched_at, status, retry_count
 `
 
 type UpsertPostParams struct {
@@ -254,6 +317,7 @@ func (q *Queries) UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, e
 		&i.PublishedAt,
 		&i.FetchedAt,
 		&i.Status,
+		&i.RetryCount,
 	)
 	return i, err
 }

@@ -12,6 +12,8 @@ func PostStatusLabel(lang i18n.Lang, status string) string {
 		return i18n.T(lang, i18n.PostStatusScheduled)
 	case "sent":
 		return i18n.T(lang, i18n.PostStatusSent)
+	case "fetch_error":
+		return i18n.T(lang, i18n.PostStatusError)
 	default:
 		return status
 	}

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS posts (
   published_at DATETIME,
   fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status TEXT NOT NULL DEFAULT 'new' 
-    CHECK (status IN ('new', 'skipped', 'scheduled', 'sent')),
+    CHECK (status IN ('new', 'skipped', 'scheduled', 'sent', 'fetch_error')),
+  retry_count INTEGER NOT NULL DEFAULT 0,
   UNIQUE(source_id, external_id)
 );
 

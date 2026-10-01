@@ -1,7 +1,6 @@
 package keyboard
 
 import (
-	"fmt"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/telegram/callback"
 
@@ -12,7 +11,7 @@ func ScheduleKeyboard(draftID int64, origin string, lang i18n.Lang) *models.Inli
 	mk := func(labelKey i18n.Key, duration string) models.InlineKeyboardButton {
 		return models.InlineKeyboardButton{
 			Text:         i18n.T(lang, labelKey),
-			CallbackData: fmt.Sprintf(callback.PlannerCreate, draftID, duration, origin),
+			CallbackData: callback.Format(callback.DraftQueue, draftID, duration, origin),
 		}
 	}
 	return &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{

@@ -9,16 +9,24 @@ import (
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram/extract"
-	"qq/anapa2006/internal/telegram/keyboard"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
+type operationMessagePayload struct {
+	ChatID      int64
+	MessageText string
+
+	ReturnText     string
+	ReturnCallback string
+}
+
 func IsReplyToBot(update *models.Update) bool {
 	return update.Message != nil && update.Message.ReplyToMessage != nil
 }
 
+// Draft edit text and custom schedule
 func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		lang := extract.Lang(ctx)
@@ -44,13 +52,13 @@ func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 		case "awaiting_text":
 			formatted := entitiesToHTML(update.Message.Text, update.Message.Entities)
 
-			if err := st.UpdateDraftText(ctx, db.UpdateDraftTextParams{
-				ID: pending.DraftID, FinalText: formatted,
+			if err := st.UpdatePostDraftText(ctx, db.UpdatePostDraftTextParams{
+				PostID: pending.PostID, FinalText: formatted,
 			}); err != nil {
 				slog.LogAttrs(
 					ctx, slog.LevelError,
 					"update draft text",
-					slog.Int64("draft_id", pending.DraftID),
+					slog.Int64("post_id", pending.PostID),
 					slog.String("error", err.Error()),
 				)
 				return
@@ -67,17 +75,35 @@ func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 				)
 			}
 
-			kb := keyboard.ScheduleKeyboard(pending.DraftID, pending.Origin, lang)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID:      chatID,
-				Text:        i18n.T(lang, i18n.SchedulePrompt, formatted),
-				ReplyMarkup: kb, ParseMode: models.ParseModeHTML,
-				LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: bot.True()},
-			})
+			payload := operationMessagePayload{
+				ChatID:         chatID,
+				MessageText:    i18n.T(lang, i18n.OperationSuccess),
+				ReturnText:     i18n.T(lang, i18n.BtnBack),
+				ReturnCallback: pending.Origin,
+			}
+
+			sendOperationSuccessMessage(ctx, b, payload)
 
 		case "awaiting_schedule":
 			// TODO:
 			return
 		}
 	}
+}
+
+func sendOperationSuccessMessage(ctx context.Context, b *bot.Bot, payload operationMessagePayload) {
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: payload.ChatID,
+		Text:   payload.MessageText,
+		ReplyMarkup: models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
+				{
+					{
+						Text:         payload.ReturnText,
+						CallbackData: payload.ReturnCallback,
+					},
+				},
+			},
+		},
+	})
 }

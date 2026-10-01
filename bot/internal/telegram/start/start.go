@@ -15,7 +15,7 @@ func startMenuKeyboard(lang i18n.Lang) *models.InlineKeyboardMarkup {
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: callback.Fetched}},
-			{{Text: i18n.T(lang, i18n.BtnScheduled), CallbackData: callback.Queued}},
+			{{Text: i18n.T(lang, i18n.BtnDraftsMenu), CallbackData: callback.DraftsMenu}},
 		},
 	}
 }

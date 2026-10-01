@@ -16,14 +16,6 @@ type AllowedUser struct {
 	AddedAt  time.Time      `json:"added_at"`
 }
 
-type Draft struct {
-	ID        int64     `json:"id"`
-	PostID    int64     `json:"post_id"`
-	FinalText string    `json:"final_text"`
-	UserID    int64     `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 type DraftMedium struct {
 	ID            int64          `json:"id"`
 	DraftID       int64          `json:"draft_id"`
@@ -39,7 +31,7 @@ type PendingReply struct {
 	ChatID          int64     `json:"chat_id"`
 	PromptMessageID int64     `json:"prompt_message_id"`
 	Action          string    `json:"action"`
-	DraftID         int64     `json:"draft_id"`
+	PostID          int64     `json:"post_id"`
 	Origin          string    `json:"origin"`
 	CreatedAt       time.Time `json:"created_at"`
 }
@@ -55,6 +47,13 @@ type Post struct {
 	RetryCount  int64        `json:"retry_count"`
 }
 
+type PostDraft struct {
+	PostID    int64     `json:"post_id"`
+	FinalText string    `json:"final_text"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type PostMedium struct {
 	ID       int64          `json:"id"`
 	PostID   int64          `json:"post_id"`
@@ -65,11 +64,9 @@ type PostMedium struct {
 }
 
 type Schedule struct {
-	ID           int64        `json:"id"`
-	DraftID      int64        `json:"draft_id"`
+	PostID       int64        `json:"post_id"`
 	TargetChatID int64        `json:"target_chat_id"`
 	ScheduledAt  time.Time    `json:"scheduled_at"`
-	Status       string       `json:"status"`
 	SentAt       sql.NullTime `json:"sent_at"`
 }
 

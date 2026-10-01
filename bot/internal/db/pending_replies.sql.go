@@ -10,7 +10,7 @@ import (
 )
 
 const createPendingReply = `-- name: CreatePendingReply :exec
-INSERT INTO pending_replies (chat_id, prompt_message_id, action, draft_id, origin)
+INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, origin)
 VALUES (?, ?, ?, ?, ?)
 `
 
@@ -18,7 +18,7 @@ type CreatePendingReplyParams struct {
 	ChatID          int64  `json:"chat_id"`
 	PromptMessageID int64  `json:"prompt_message_id"`
 	Action          string `json:"action"`
-	DraftID         int64  `json:"draft_id"`
+	PostID          int64  `json:"post_id"`
 	Origin          string `json:"origin"`
 }
 
@@ -27,7 +27,7 @@ func (q *Queries) CreatePendingReply(ctx context.Context, arg CreatePendingReply
 		arg.ChatID,
 		arg.PromptMessageID,
 		arg.Action,
-		arg.DraftID,
+		arg.PostID,
 		arg.Origin,
 	)
 	return err
@@ -48,7 +48,7 @@ func (q *Queries) DeletePendingReply(ctx context.Context, arg DeletePendingReply
 }
 
 const getPendingReply = `-- name: GetPendingReply :one
-SELECT chat_id, prompt_message_id, "action", draft_id, origin, created_at FROM pending_replies WHERE chat_id = ? AND prompt_message_id = ?
+SELECT chat_id, prompt_message_id, "action", post_id, origin, created_at FROM pending_replies WHERE chat_id = ? AND prompt_message_id = ?
 `
 
 type GetPendingReplyParams struct {
@@ -63,7 +63,7 @@ func (q *Queries) GetPendingReply(ctx context.Context, arg GetPendingReplyParams
 		&i.ChatID,
 		&i.PromptMessageID,
 		&i.Action,
-		&i.DraftID,
+		&i.PostID,
 		&i.Origin,
 		&i.CreatedAt,
 	)

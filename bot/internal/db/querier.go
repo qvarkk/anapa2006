@@ -12,30 +12,37 @@ import (
 type Querier interface {
 	AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) error
 	AddPostMedia(ctx context.Context, arg AddPostMediaParams) (PostMedium, error)
-	ClaimDueSchedule(ctx context.Context, id int64) (Schedule, error)
+	CheckDraftScheduled(ctx context.Context, postID int64) (bool, error)
+	CheckPostDraftExists(ctx context.Context, postID int64) (bool, error)
+	ClaimScheduledPost(ctx context.Context, id int64) (Post, error)
+	CountDrafts(ctx context.Context) (int64, error)
 	CountMediaKindsByDraft(ctx context.Context, draftID int64) ([]CountMediaKindsByDraftRow, error)
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
 	CountPosts(ctx context.Context) (int64, error)
 	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
 	CountScheduled(ctx context.Context) (int64, error)
 	CountSources(ctx context.Context) (int64, error)
-	CreateDraft(ctx context.Context, arg CreateDraftParams) (Draft, error)
 	CreateDraftMedia(ctx context.Context, arg CreateDraftMediaParams) error
 	CreatePendingReply(ctx context.Context, arg CreatePendingReplyParams) error
+	CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) error
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
+	DeleteDraft(ctx context.Context, postID int64) error
 	DeletePendingReply(ctx context.Context, arg DeletePendingReplyParams) error
+	Deschedule(ctx context.Context, postID int64) error
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
-	GetDraftByID(ctx context.Context, id int64) (Draft, error)
-	GetDraftsPostID(ctx context.Context, id int64) (int64, error)
 	GetPendingReply(ctx context.Context, arg GetPendingReplyParams) (PendingReply, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
+	GetPostDraftByID(ctx context.Context, postID int64) (PostDraft, error)
+	GetPostScheduleByID(ctx context.Context, postID int64) (Schedule, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
 	GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error)
-	GetScheduleWithDraftData(ctx context.Context, id int64) (GetScheduleWithDraftDataRow, error)
+	GetScheduleWithDraftData(ctx context.Context, postID int64) (GetScheduleWithDraftDataRow, error)
+	HidePost(ctx context.Context, id int64) error
 	IncrementRetryCount(ctx context.Context, id int64) error
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
+	ListDraftsLatest(ctx context.Context, arg ListDraftsLatestParams) ([]ListDraftsLatestRow, error)
 	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
@@ -43,14 +50,15 @@ type Querier interface {
 	ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
 	ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error)
+	MarkPostArchived(ctx context.Context, id int64) error
 	MarkPostFailed(ctx context.Context, id int64) error
 	MarkPostScheduled(ctx context.Context, id int64) error
+	MarkPostSending(ctx context.Context, id int64) error
 	MarkPostSent(ctx context.Context, id int64) error
-	MarkScheduleSent(ctx context.Context, id int64) error
-	ResetScheduleStatus(ctx context.Context, id int64) error
+	MarkScheduleSent(ctx context.Context, postID int64) error
 	SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error
-	SkipPost(ctx context.Context, id int64) error
-	UpdateDraftText(ctx context.Context, arg UpdateDraftTextParams) error
+	UnhidePost(ctx context.Context, id int64) error
+	UpdatePostDraftText(ctx context.Context, arg UpdatePostDraftTextParams) error
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }
 

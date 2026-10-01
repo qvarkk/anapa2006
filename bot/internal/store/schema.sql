@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS posts (
   published_at DATETIME,
   fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status TEXT NOT NULL DEFAULT 'new' 
-    CHECK (status IN ('new', 'skipped', 'scheduled', 'sent', 'fetch_error')),
+    CHECK (status IN ('new', 'skipped', 'scheduled', 'sending', 'sent', 'fetch_error', 'archived')),
   retry_count INTEGER NOT NULL DEFAULT 0,
   UNIQUE(source_id, external_id)
 );
@@ -34,17 +34,17 @@ CREATE TABLE IF NOT EXISTS post_media (
   position INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS drafts (
-  id INTEGER PRIMARY KEY,
-  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE SET NULL,
+CREATE TABLE IF NOT EXISTS post_drafts (
+  post_id INTEGER PRIMARY KEY,
   final_text TEXT NOT NULL,
   user_id INTEGER NOT NULL REFERENCES allowed_users(user_id),
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS draft_media (
   id INTEGER PRIMARY KEY,
-  draft_id INTEGER NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+  draft_id INTEGER NOT NULL,
   kind TEXT NOT NULL 
     CHECK (kind IN ('photo', 'video', 'document')),
   origin_media_id REFERENCES post_media(id),
@@ -52,17 +52,16 @@ CREATE TABLE IF NOT EXISTS draft_media (
   url TEXT,
   position INTEGER NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (draft_id, position)
+  UNIQUE (draft_id, position),
+  FOREIGN KEY (draft_id) REFERENCES post_drafts(post_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS schedule (
-  id INTEGER PRIMARY KEY,
-  draft_id INTEGER NOT NULL REFERENCES drafts(id),
+  post_id INTEGER PRIMARY KEY,
   target_chat_id INTEGER NOT NULL,
   scheduled_at DATETIME NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status in ('pending', 'sending', 'sent', 'cancelled')),
-  sent_at DATETIME
+  sent_at DATETIME,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS pending_replies (
@@ -70,7 +69,7 @@ CREATE TABLE IF NOT EXISTS pending_replies (
   prompt_message_id INTEGER NOT NULL,
   action TEXT NOT NULL
     CHECK (action IN ('awaiting_text', 'awaiting_schedule')),
-  draft_id INTEGER NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   origin TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (chat_id, prompt_message_id)

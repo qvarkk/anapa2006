@@ -15,7 +15,8 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-// TODO: resolve possible DRY with telegram/fetched/post.go:HandlePostDetail()
+// TODO: delete.
+// resolve possible DRY with telegram/fetched/post.go:HandlePostDetail()
 func HandleScheduleDetail(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
@@ -49,7 +50,7 @@ func HandleScheduleDetail(st *store.Store) bot.HandlerFunc {
 			return
 		}
 
-		media, err := st.ListDraftMedia(ctx, schedule.DraftID)
+		media, err := st.ListDraftMedia(ctx, schedule.PostID)
 		if err != nil {
 			return
 		}
@@ -60,7 +61,7 @@ func HandleScheduleDetail(st *store.Store) bot.HandlerFunc {
 		}
 
 		text := i18n.T(lang, i18n.ScheduledDetail,
-			schedule.ScheduledAt.Format("02.01.2006 15:04"), render.ScheduleStatusLabel(lang, schedule.Status),
+			schedule.ScheduledAt.Format("02.01.2006 15:04"), render.ScheduleStatusLabel(lang, ""),
 			render.AttachmentsSummary(counts), schedule.ExternalID, schedule.FinalText,
 		)
 

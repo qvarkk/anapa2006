@@ -11,6 +11,28 @@ import (
 	"time"
 )
 
+const claimScheduledPost = `-- name: ClaimScheduledPost :one
+UPDATE posts SET status = 'sending'
+WHERE id = ? AND status = 'scheduled'
+RETURNING id, source_id, external_id, raw_text, published_at, fetched_at, status, retry_count
+`
+
+func (q *Queries) ClaimScheduledPost(ctx context.Context, id int64) (Post, error) {
+	row := q.db.QueryRowContext(ctx, claimScheduledPost, id)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.SourceID,
+		&i.ExternalID,
+		&i.RawText,
+		&i.PublishedAt,
+		&i.FetchedAt,
+		&i.Status,
+		&i.RetryCount,
+	)
+	return i, err
+}
+
 const countPosts = `-- name: CountPosts :one
 SELECT COUNT(*) FROM posts WHERE status <> 'fetch_error'
 `
@@ -122,6 +144,15 @@ func (q *Queries) GetRetrieablePosts(ctx context.Context, retryCount int64) ([]P
 		return nil, err
 	}
 	return items, nil
+}
+
+const hidePost = `-- name: HidePost :exec
+UPDATE posts SET status = 'skipped' WHERE id = ?
+`
+
+func (q *Queries) HidePost(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, hidePost, id)
+	return err
 }
 
 const incrementRetryCount = `-- name: IncrementRetryCount :exec
@@ -251,6 +282,15 @@ func (q *Queries) ListPostsLatest(ctx context.Context, arg ListPostsLatestParams
 	return items, nil
 }
 
+const markPostArchived = `-- name: MarkPostArchived :exec
+UPDATE posts SET status = 'archived' WHERE id = ?
+`
+
+func (q *Queries) MarkPostArchived(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostArchived, id)
+	return err
+}
+
 const markPostFailed = `-- name: MarkPostFailed :exec
 UPDATE posts SET status = 'fetch_error' WHERE id = ?
 `
@@ -269,6 +309,15 @@ func (q *Queries) MarkPostScheduled(ctx context.Context, id int64) error {
 	return err
 }
 
+const markPostSending = `-- name: MarkPostSending :exec
+UPDATE posts SET status = 'sending' WHERE id = ?
+`
+
+func (q *Queries) MarkPostSending(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostSending, id)
+	return err
+}
+
 const markPostSent = `-- name: MarkPostSent :exec
 UPDATE posts SET status = 'sent' WHERE id = ?
 `
@@ -278,12 +327,12 @@ func (q *Queries) MarkPostSent(ctx context.Context, id int64) error {
 	return err
 }
 
-const skipPost = `-- name: SkipPost :exec
-UPDATE posts SET status = 'skipped' WHERE id = ?
+const unhidePost = `-- name: UnhidePost :exec
+UPDATE posts SET status = 'new' WHERE id = ?
 `
 
-func (q *Queries) SkipPost(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, skipPost, id)
+func (q *Queries) UnhidePost(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, unhidePost, id)
 	return err
 }
 

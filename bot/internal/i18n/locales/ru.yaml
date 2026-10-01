@@ -15,6 +15,8 @@ simple:
   feature_unavailable: "Эта функция недоступна."
   first_page: "Вы на первой странице."
   last_page: "Вы на последней странице."
+  unscheduled: "не задано"
+  operation_success: "✅ Операция выполнена успешно"
   #
   btn_back: "⬅️ Назад"
   btn_select_post: "🫆 ID %d"
@@ -27,9 +29,17 @@ simple:
   btn_scheduled: "🕒 Отложенные посты"
   #
   post_status_new: "🆕 Новый"
-  post_status_skipped: "✋ Пропущен"
+  post_status_skipped: "⛈️ Скрыт"
   post_status_scheduled: "🕒 Запланирован на отправку"
+  post_status_sending: "🔃 В процессе отправки"
   post_status_sent: "📨 Отправлен"
+  post_status_error: "👾 Ошибка"
+  post_status_archived: "📦 В архиве"
+  #
+  btn_post_show: "👁️ Показать"
+  btn_post_hide: "⛈️ Скрыть"
+  btn_post_delete: "🗑️ Удалить"
+  btn_post_archive: "📦 Архивировать"
   #
   list_fetched_menu_title: |
     ✨ В этом разделе можно посмотреть посты, которые были загружены из источников
@@ -109,6 +119,42 @@ simple:
   btn_scheduled_list: "📋 Список отложенных"
   btn_scheduled_sent: "⏰ Опубликованные посты"
   btn_scheduled_settings: "⚙️ Настройки отложенных"
+  #
+  drafts_menu: |
+    ✨ В этом разделе можно просмотреть и отредактировать черновики, созданные на основе постов.
+
+    ⬇️ Выберите опцию
+  drafts_list: "📝 Список черновиков. Всего %d."
+  draft_detail: |
+    🫆 ID: %[1]d
+    🗓️ Время публикации: %[2]s
+    %[3]s
+    💬: %[4]s
+    🖼️ Вложения: %[5]s
+  #
+  draft_created: "🏁 Черновик был создан успешно!"
+  #
+  promps_draft_edit_text: "Введите новый текст"
+  promps_draft_edit_media: "Приложите новое фото"
+  promps_draft_queue: "Выберите когда опубликовать"
+  promps_draft_dequeue: "Вы уверены, что хотите снять с публикации?"
+  promps_draft_delete: "Вы уверены, что хотите удалить черновик?"
+  #
+  btn_prompt_draft_dequeue: "❌ Снять с публикации"
+  btn_prompt_draft_delete: "🗑️ Удалить"
+  #
+  btn_drafts_menu: "📝 Черновики"
+  btn_drafts_list: "🌎 Показать черновики"
+  btn_draft_detail: "🫆 ID: %d"
+  btn_draft_view: "📝 Перейти к черновику"
+  btn_draft_create: "➕ Создать черновик"
+  btn_draft_edit_text: "🗒️ Изменить текст"
+  btn_draft_edit_media: "🖼️ Изменить вложения"
+  btn_draft_requeue: "⏳ Изменить время публикации"
+  btn_draft_queue: "⏳ Отложить публикацию"
+  btn_draft_dequeue: "❌ Снять с публикации"
+  btn_draft_delete: "🗑️ Удалить"
+  btn_draft_show: "👁️‍🗨️ Предпросмотр"
 
 plural:
   channel_new_count:

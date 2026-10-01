@@ -1,5 +1,5 @@
 -- name: CreatePendingReply :exec
-INSERT INTO pending_replies (chat_id, prompt_message_id, action, draft_id, origin)
+INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, origin)
 VALUES (?, ?, ?, ?, ?);
 
 -- name: GetPendingReply :one

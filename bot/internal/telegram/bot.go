@@ -8,11 +8,11 @@ import (
 	"qq/anapa2006/internal/telegram/callback"
 	"qq/anapa2006/internal/telegram/commands"
 	"qq/anapa2006/internal/telegram/def"
+	"qq/anapa2006/internal/telegram/drafts"
 	"qq/anapa2006/internal/telegram/fetched"
 	"qq/anapa2006/internal/telegram/middleware"
 	"qq/anapa2006/internal/telegram/noop"
 	"qq/anapa2006/internal/telegram/pagination"
-	"qq/anapa2006/internal/telegram/planner"
 	"qq/anapa2006/internal/telegram/queue"
 	"qq/anapa2006/internal/telegram/reply"
 	"qq/anapa2006/internal/telegram/start"
@@ -73,11 +73,21 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerPrefixCallback(b, callback.QueueListPrefix, queue.HandleQueueList(st))
 	registerPrefixCallback(b, callback.QueueSchedulePrefix, queue.HandleScheduleDetail(st))
 
-	// Planner
-	registerPrefixCallback(b, callback.PlannerUsePrefix, planner.HandlePlannerUse(st))
-	registerPrefixCallback(b, callback.PlannerEditPrefix, planner.HandlePlannerEdit(st))
-	registerPrefixCallback(b, callback.PlannerSkipPrefix, planner.HandlePlannerSkip(st))
-	registerPrefixCallback(b, callback.PlannerCreatePrefix, planner.HandlePlannerCreate(st, channelID))
+	// Draft TODO: add media edit
+	registerExactCallback(b, callback.DraftsMenu, drafts.HandleDraftsMenu)
+	registerPrefixCallback(b, callback.DraftsListPrefix, drafts.HandleList(st))
+	registerPrefixCallback(b, callback.DraftDetailPrefix, drafts.HandleDetail(st))
+	registerPrefixCallback(b, callback.DraftCreatePrefix, drafts.HandleCreate(st))
+	registerPrefixCallback(b, callback.DraftQueuePrefix, drafts.HandleQueue(st, channelID))
+	registerPrefixCallback(b, callback.DraftDequeuePrefix, drafts.HandleDequeue(st))
+	registerPrefixCallback(b, callback.DraftDeletePrefix, drafts.HandleDelete(st))
+	registerPrefixCallback(b, callback.DraftShowPrefix, drafts.HandleShow(st))
+
+	// Draft prompts TODO: add media edit
+	registerPrefixCallback(b, callback.DraftPromptDeletePrefix, drafts.HandleDeletePrompt)
+	registerPrefixCallback(b, callback.DraftPromptDequeuePrefix, drafts.HandleDequeuePrompt)
+	registerPrefixCallback(b, callback.DraftPromptEditTextPrefix, drafts.HandleEditTextPrompt(st))
+	registerPrefixCallback(b, callback.DraftPromptQueuePrefix, drafts.HandleQueuePrompt(st))
 }
 
 func registerExactCallback(b *bot.Bot, callback string, f bot.HandlerFunc) {

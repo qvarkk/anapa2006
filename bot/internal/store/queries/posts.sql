@@ -33,20 +33,34 @@ SELECT p.*, s.channel_handle FROM posts p
 JOIN sources s ON s.id = p.source_id
 WHERE p.id = ?;
 
+-- name: ClaimScheduledPost :one
+UPDATE posts SET status = 'sending'
+WHERE id = ? AND status = 'scheduled'
+RETURNING *;
+
 -- name: GetRetrieablePosts :many
 SELECT * FROM posts WHERE status = 'fetch_error' AND retry_count < ?;
 
 -- name: IncrementRetryCount :exec
 UPDATE posts SET retry_count = retry_count + 1 WHERE id = ?;
 
--- name: SkipPost :exec
+-- name: HidePost :exec
 UPDATE posts SET status = 'skipped' WHERE id = ?;
+
+-- name: UnhidePost :exec
+UPDATE posts SET status = 'new' WHERE id = ?;
 
 -- name: MarkPostScheduled :exec
 UPDATE posts SET status = 'scheduled' WHERE id = ?;
+
+-- name: MarkPostSending :exec
+UPDATE posts SET status = 'sending' WHERE id = ?;
 
 -- name: MarkPostSent :exec
 UPDATE posts SET status = 'sent' WHERE id = ?;
 
 -- name: MarkPostFailed :exec
 UPDATE posts SET status = 'fetch_error' WHERE id = ?;
+
+-- name: MarkPostArchived :exec
+UPDATE posts SET status = 'archived' WHERE id = ?;

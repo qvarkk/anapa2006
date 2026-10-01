@@ -77,8 +77,8 @@ func HandleQueueList(st *store.Store) bot.HandlerFunc {
 		schedules := make([]render.RenderedSchedule, 0, len(rows))
 		for _, r := range rows {
 			schedules = append(schedules, render.RenderedSchedule{
-				ID: r.ID, ScheduledAt: r.ScheduledAt, Status: r.Status,
-				Text: r.FinalText, MediaCounts: scheduledMediaCounts(ctx, st, r.ID),
+				ID: r.PostID, ScheduledAt: r.ScheduledAt, Status: r.Status,
+				Text: r.FinalText, MediaCounts: scheduledMediaCounts(ctx, st, r.PostID),
 			})
 		}
 
@@ -108,7 +108,8 @@ func HandleQueueList(st *store.Store) bot.HandlerFunc {
 	}
 }
 
-// TODO: refactor to unify with postMediaCounts
+// TODO: delete.
+// refactor to unify with postMediaCounts
 func scheduledMediaCounts(ctx context.Context, st *store.Store, draftID int64) map[string]int {
 	rows, err := st.CountMediaKindsByDraft(ctx, draftID)
 	if err != nil {

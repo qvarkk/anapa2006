@@ -24,8 +24,8 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 		chatID, msgID := extract.CallbackTarget(update)
 		callbackData := update.CallbackQuery.Data
 
-		parts := strings.SplitN(callbackData, ":", 3)
-		if len(parts) != 3 {
+		parts := strings.SplitN(callbackData, ":", 4)
+		if len(parts) != 4 {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
 				"malformed post detail callback",
@@ -33,7 +33,7 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			)
 			return
 		}
-		postID, err := strconv.ParseInt(parts[1], 10, 64)
+		postID, err := strconv.ParseInt(parts[2], 10, 64)
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
@@ -42,7 +42,7 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			)
 			return
 		}
-		origin := parts[2]
+		origin := parts[3]
 
 		post, err := st.GetPostWithSource(ctx, postID)
 		if err != nil {
@@ -64,6 +64,16 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			)
 		}
 
+		draftExists, err := st.CheckPostDraftExists(ctx, postID)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"check draft exists",
+				slog.Int64("post_id", postID),
+				slog.String("error", err.Error()),
+			)
+		}
+
 		counts := map[string]int{}
 		for _, m := range media {
 			counts[m.Kind]++
@@ -74,11 +84,47 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			render.PostStatusLabel(lang, post.Status), post.ExternalID, render.AttachmentsSummary(counts), post.RawText,
 		)
 
+		var draftButton models.InlineKeyboardButton
+		if draftExists {
+			draftButton = models.InlineKeyboardButton{
+				Text:         i18n.T(lang, i18n.BtnDraftView),
+				CallbackData: callback.Format(callback.DraftDetail, postID, callbackData),
+			}
+		} else {
+			draftButton = models.InlineKeyboardButton{
+				Text:         i18n.T(lang, i18n.BtnDraftCreate),
+				CallbackData: callback.Format(callback.DraftCreate, postID, callbackData),
+			}
+		}
+
+		var postVisibilityButton models.InlineKeyboardButton
+		if post.Status != "skipped" {
+			postVisibilityButton = models.InlineKeyboardButton{
+				Text:         i18n.T(lang, i18n.BtnPostHide),
+				CallbackData: callback.Format(callback.PostHide, postID, callbackData),
+			}
+		} else {
+			postVisibilityButton = models.InlineKeyboardButton{
+				Text:         i18n.T(lang, i18n.BtnPostShow),
+				CallbackData: callback.Format(callback.PostShow, postID, callbackData),
+			}
+		}
+
 		kb := &models.InlineKeyboardMarkup{InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnUse), CallbackData: callback.Format(callback.PlannerUse, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnEdit), CallbackData: callback.Format(callback.PlannerEdit, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnSkip), CallbackData: callback.Format(callback.PlannerSkip, postID, callbackData)}},
-			{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
+			{draftButton},
+			{postVisibilityButton},
+			{
+				{
+					Text:         i18n.T(lang, i18n.BtnPostDelete),
+					CallbackData: callback.Format(callback.PostDelete, postID, callbackData),
+				},
+			},
+			{
+				{
+					Text:         i18n.T(lang, i18n.BtnBack),
+					CallbackData: origin,
+				},
+			},
 		}}
 
 		if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{

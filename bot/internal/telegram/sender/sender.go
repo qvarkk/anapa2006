@@ -59,7 +59,11 @@ func (s *Sender) SendMediaWithCaption(
 		default:
 			return fmt.Errorf("unknown media kind in scheduled message")
 		}
-		return fmt.Errorf("media url %s: %w", medium.Url.String, err)
+		if err != nil {
+			return fmt.Errorf("media url %s: %w", medium.Url.String, err)
+		} else {
+			return nil
+		}
 	} else if len(media) >= 2 && len(media) <= 10 {
 		var tgMedia []models.InputMedia
 		for i, medium := range media {

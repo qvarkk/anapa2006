@@ -39,6 +39,8 @@ const (
 	FeatureUnavailable Key = "feature_unavailable"
 	FirstPage          Key = "first_page"
 	LastPage           Key = "last_page"
+	Unscheduled        Key = "unscheduled"
+	OperationSuccess   Key = "operation_success"
 
 	// Common buttons
 	BtnBack Key = "btn_back"
@@ -55,8 +57,16 @@ const (
 	PostStatusNew       Key = "post_status_new"
 	PostStatusSkipped   Key = "post_status_skipped"
 	PostStatusScheduled Key = "post_status_scheduled"
+	PostStatusSending   Key = "post_status_sending"
 	PostStatusSent      Key = "post_status_sent"
 	PostStatusError     Key = "post_status_error"
+	PostStatusArchived  Key = "post_status_archived"
+
+	// Post buttons
+	BtnPostShow    Key = "btn_post_show"
+	BtnPostHide    Key = "btn_post_hide"
+	BtnPostDelete  Key = "btn_post_delete"
+	BtnPostArchive Key = "btn_post_archive"
 
 	// List fetched titles
 	FetchMenu         Key = "list_fetched_menu_title"
@@ -106,6 +116,39 @@ const (
 	// Schedule edit
 	EditPrompt      Key = "edit_prompt"
 	EditPlaceholder Key = "edit_placeholder"
+
+	// Drafts
+	DraftsMenu  Key = "drafts_menu"
+	DraftsList  Key = "drafts_list"
+	DraftDetail Key = "draft_detail"
+
+	// Draft actions
+	DraftCreated Key = "draft_created"
+
+	// Draft prompts
+	PromptDraftEditText  Key = "promps_draft_edit_text"
+	PromptDraftEditMedia Key = "promps_draft_edit_media"
+	PromptDraftQueue     Key = "promps_draft_queue"
+	PromptDraftDequeue   Key = "promps_draft_dequeue"
+	PromptDraftDelete    Key = "promps_draft_delete"
+
+	// Draft prompts buttons
+	BtnPromptDraftDequeue Key = "btn_prompt_draft_dequeue"
+	BtnPromptDraftDelete  Key = "btn_prompt_draft_delete"
+
+	// Draft buttons
+	BtnDraftsMenu     Key = "btn_drafts_menu"
+	BtnDraftsList     Key = "btn_drafts_list"
+	BtnDraftDetail    Key = "btn_draft_detail"
+	BtnDraftView      Key = "btn_draft_view"
+	BtnDraftCreate    Key = "btn_draft_create"
+	BtnDraftEditText  Key = "btn_draft_edit_text"
+	BtnDraftEditMedia Key = "btn_draft_edit_media"
+	BtnDraftRequeue   Key = "btn_draft_requeue"
+	BtnDraftQueue     Key = "btn_draft_queue"
+	BtnDraftDequeue   Key = "btn_draft_dequeue"
+	BtnDraftDelete    Key = "btn_draft_delete"
+	BtnDraftShow      Key = "btn_draft_show"
 )
 
 // !!!

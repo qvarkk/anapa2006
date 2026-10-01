@@ -7,23 +7,66 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"time"
 )
 
-const createDraft = `-- name: CreateDraft :one
-INSERT INTO drafts (post_id, final_text, user_id) VALUES (?, ?, ?) RETURNING id, post_id, final_text, user_id, created_at
+const checkDraftScheduled = `-- name: CheckDraftScheduled :one
+SELECT EXISTS (
+    SELECT 1
+    FROM schedule
+    WHERE post_id = ?
+        AND scheduled_at IS NOT NULL
+)
 `
 
-type CreateDraftParams struct {
+func (q *Queries) CheckDraftScheduled(ctx context.Context, postID int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkDraftScheduled, postID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkPostDraftExists = `-- name: CheckPostDraftExists :one
+SELECT EXISTS (
+    SELECT 1 
+    FROM post_drafts 
+    WHERE post_id = ?
+)
+`
+
+func (q *Queries) CheckPostDraftExists(ctx context.Context, postID int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkPostDraftExists, postID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const countDrafts = `-- name: CountDrafts :one
+SELECT COUNT(*) FROM post_drafts
+`
+
+func (q *Queries) CountDrafts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDrafts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createPostDraft = `-- name: CreatePostDraft :one
+INSERT INTO post_drafts (post_id, final_text, user_id) VALUES (?, ?, ?) RETURNING post_id, final_text, user_id, created_at
+`
+
+type CreatePostDraftParams struct {
 	PostID    int64  `json:"post_id"`
 	FinalText string `json:"final_text"`
 	UserID    int64  `json:"user_id"`
 }
 
-func (q *Queries) CreateDraft(ctx context.Context, arg CreateDraftParams) (Draft, error) {
-	row := q.db.QueryRowContext(ctx, createDraft, arg.PostID, arg.FinalText, arg.UserID)
-	var i Draft
+func (q *Queries) CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error) {
+	row := q.db.QueryRowContext(ctx, createPostDraft, arg.PostID, arg.FinalText, arg.UserID)
+	var i PostDraft
 	err := row.Scan(
-		&i.ID,
 		&i.PostID,
 		&i.FinalText,
 		&i.UserID,
@@ -32,15 +75,23 @@ func (q *Queries) CreateDraft(ctx context.Context, arg CreateDraftParams) (Draft
 	return i, err
 }
 
-const getDraftByID = `-- name: GetDraftByID :one
-SELECT id, post_id, final_text, user_id, created_at FROM drafts WHERE id = ?
+const deleteDraft = `-- name: DeleteDraft :exec
+DELETE FROM post_drafts WHERE post_id = ?
 `
 
-func (q *Queries) GetDraftByID(ctx context.Context, id int64) (Draft, error) {
-	row := q.db.QueryRowContext(ctx, getDraftByID, id)
-	var i Draft
+func (q *Queries) DeleteDraft(ctx context.Context, postID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteDraft, postID)
+	return err
+}
+
+const getPostDraftByID = `-- name: GetPostDraftByID :one
+SELECT post_id, final_text, user_id, created_at FROM post_drafts WHERE post_id = ?
+`
+
+func (q *Queries) GetPostDraftByID(ctx context.Context, postID int64) (PostDraft, error) {
+	row := q.db.QueryRowContext(ctx, getPostDraftByID, postID)
+	var i PostDraft
 	err := row.Scan(
-		&i.ID,
 		&i.PostID,
 		&i.FinalText,
 		&i.UserID,
@@ -49,27 +100,69 @@ func (q *Queries) GetDraftByID(ctx context.Context, id int64) (Draft, error) {
 	return i, err
 }
 
-const getDraftsPostID = `-- name: GetDraftsPostID :one
-SELECT post_id FROM drafts WHERE id = ?
+const listDraftsLatest = `-- name: ListDraftsLatest :many
+SELECT pd.post_id, pd.final_text, pd.user_id, pd.created_at, p.status, s.scheduled_at FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+LEFT JOIN schedule s ON s.post_id = pd.post_id
+WHERE p.status <> 'sent'
+ORDER BY s.scheduled_at DESC
+LIMIT ? OFFSET ?
 `
 
-func (q *Queries) GetDraftsPostID(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getDraftsPostID, id)
-	var post_id int64
-	err := row.Scan(&post_id)
-	return post_id, err
+type ListDraftsLatestParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
 }
 
-const updateDraftText = `-- name: UpdateDraftText :exec
-UPDATE drafts SET final_text = ? WHERE id = ?
+type ListDraftsLatestRow struct {
+	PostID      int64        `json:"post_id"`
+	FinalText   string       `json:"final_text"`
+	UserID      int64        `json:"user_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	Status      string       `json:"status"`
+	ScheduledAt sql.NullTime `json:"scheduled_at"`
+}
+
+func (q *Queries) ListDraftsLatest(ctx context.Context, arg ListDraftsLatestParams) ([]ListDraftsLatestRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDraftsLatest, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDraftsLatestRow
+	for rows.Next() {
+		var i ListDraftsLatestRow
+		if err := rows.Scan(
+			&i.PostID,
+			&i.FinalText,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.Status,
+			&i.ScheduledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updatePostDraftText = `-- name: UpdatePostDraftText :exec
+UPDATE post_drafts SET final_text = ? WHERE post_id = ?
 `
 
-type UpdateDraftTextParams struct {
+type UpdatePostDraftTextParams struct {
 	FinalText string `json:"final_text"`
-	ID        int64  `json:"id"`
+	PostID    int64  `json:"post_id"`
 }
 
-func (q *Queries) UpdateDraftText(ctx context.Context, arg UpdateDraftTextParams) error {
-	_, err := q.db.ExecContext(ctx, updateDraftText, arg.FinalText, arg.ID)
+func (q *Queries) UpdatePostDraftText(ctx context.Context, arg UpdatePostDraftTextParams) error {
+	_, err := q.db.ExecContext(ctx, updatePostDraftText, arg.FinalText, arg.PostID)
 	return err
 }

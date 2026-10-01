@@ -74,7 +74,7 @@ func (s *Scheduler) Tick(ctx context.Context) {
 }
 
 func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
-	claimed, err := s.store.ClaimDueSchedule(ctx, sched.ID)
+	claimed, err := s.store.ClaimScheduledPost(ctx, sched.PostID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return
 	}
@@ -82,30 +82,40 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"claim schedule",
-			slog.Int64("schedule_id", sched.ID),
+			slog.Int64("post_id", sched.PostID),
 			slog.String("error", err.Error()),
 		)
 		return
 	}
 
-	draft, err := s.store.GetDraftByID(ctx, claimed.DraftID)
+	schedule, err := s.store.GetPostScheduleByID(ctx, claimed.ID)
 	if err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
-			"get schedule draft",
-			slog.Int64("schedule_id", sched.ID),
-			slog.Int64("draft_id", sched.DraftID),
+			"get post schedule",
+			slog.Int64("post_id", sched.PostID),
 			slog.String("error", err.Error()),
 		)
 		return
 	}
 
-	media, err := s.store.ListDraftMedia(ctx, draft.ID)
+	draft, err := s.store.GetPostDraftByID(ctx, claimed.ID)
+	if err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelError,
+			"get post draft",
+			slog.Int64("post_id", sched.PostID),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	media, err := s.store.ListDraftMedia(ctx, draft.PostID)
 	if err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"list draft media",
-			slog.Int64("draft_id", draft.ID),
+			slog.Int64("post_id", draft.PostID),
 			slog.String("error", err.Error()),
 		)
 		return
@@ -113,17 +123,16 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 
 	var sendErr error
 	if len(media) == 0 {
-		sendErr = s.sender.SendMessage(ctx, claimed.TargetChatID, draft.FinalText)
+		sendErr = s.sender.SendMessage(ctx, schedule.TargetChatID, draft.FinalText)
 	} else {
-		sendErr = s.sender.SendMediaWithCaption(ctx, claimed.TargetChatID, media, draft.FinalText)
+		sendErr = s.sender.SendMediaWithCaption(ctx, schedule.TargetChatID, media, draft.FinalText)
 	}
 
 	if sendErr != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"send message error",
-			slog.Int64("schedule_id", claimed.ID),
-			slog.Int64("draft_id", draft.ID),
+			slog.Int64("post_id", draft.PostID),
 			slog.String("error", sendErr.Error()),
 		)
 		return
@@ -133,29 +142,28 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		slog.LogAttrs(
 			ctx, slog.LevelWarn,
 			"mark schedule sent",
-			slog.Int64("schedule_id", claimed.ID),
+			slog.Int64("post_id", claimed.ID),
 			slog.String("error", err.Error()),
 		)
 	}
 
-	if err := s.store.MarkPostSent(ctx, draft.PostID); err != nil {
+	if err := s.store.MarkPostSent(ctx, claimed.ID); err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelWarn,
 			"mark post sent",
-			slog.Int64("post_id", draft.PostID),
+			slog.Int64("post_id", claimed.ID),
 			slog.String("error", err.Error()),
 		)
 	}
 
 	if s.onAfterPost != nil {
-		s.onAfterPost(ctx, claimed)
+		s.onAfterPost(ctx, schedule)
 	}
 
 	slog.LogAttrs(
 		ctx, slog.LevelInfo,
 		"published scheduled post",
-		slog.Int64("schedule_id", claimed.ID),
-		slog.Int64("draft_id", draft.ID),
+		slog.Int64("post_id", draft.PostID),
 		slog.Int64("chat_id", sched.TargetChatID),
 	)
 }

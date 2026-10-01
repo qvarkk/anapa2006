@@ -2,6 +2,7 @@ package render
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
@@ -38,6 +39,14 @@ type RenderedSchedule struct {
 	MediaCounts map[string]int
 }
 
+type RenderedDraft struct {
+	PostID      int64
+	ScheduledAt sql.NullTime
+	PostStatus  string
+	Text        string
+	MediaCounts map[string]int
+}
+
 type CallbackBuilder func(id int64) string
 
 type renderPayload struct {
@@ -63,6 +72,11 @@ type PostListPayload struct {
 type ScheduledListPayload struct {
 	renderPayload
 	Scheduled []RenderedSchedule
+}
+
+type DraftListPayload struct {
+	renderPayload
+	Drafts []RenderedDraft
 }
 
 func PostListPage(ctx context.Context, payload PostListPayload) {
@@ -136,6 +150,66 @@ func ScheduleListPage(ctx context.Context, payload ScheduledListPayload) {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"edit message to render scheduled list failed",
+			slog.String("error", err.Error()),
+		)
+	}
+}
+
+func DraftListPage(ctx context.Context, payload DraftListPayload) {
+	var sb strings.Builder
+	sb.WriteString(i18n.T(payload.Lang, i18n.DraftsList, payload.Total))
+	sb.WriteString("\n\n")
+
+	var rows [][]models.InlineKeyboardButton
+	for _, d := range payload.Drafts {
+		scheduledStr := i18n.T(payload.Lang, i18n.Unscheduled)
+		if d.ScheduledAt.Valid {
+			scheduledStr = d.ScheduledAt.Time.Format("02.01.2006 15:04")
+		}
+
+		sb.WriteString(i18n.T(payload.Lang, i18n.DraftDetail,
+			d.PostID, scheduledStr, PostStatusLabel(payload.Lang, d.PostStatus),
+			truncate(stripTagsForPreview(d.Text), truncateLength), AttachmentsSummary(d.MediaCounts),
+		))
+
+		sb.WriteString("\n\n")
+
+		rows = append(rows, []models.InlineKeyboardButton{
+			{
+				Text:         i18n.T(payload.Lang, i18n.BtnDraftDetail, d.PostID),
+				CallbackData: payload.SelectCallback(d.PostID),
+			},
+		})
+	}
+
+	if payload.TotalPages > 1 {
+		rows = append(
+			rows,
+			pagination.BuildPaginationRow(
+				payload.Page,
+				payload.TotalPages,
+				payload.PrevCallback,
+				payload.NextCallback,
+			),
+		)
+	}
+
+	rows = append(rows, []models.InlineKeyboardButton{
+		{Text: i18n.T(payload.Lang, i18n.BtnBack), CallbackData: payload.BackCallback},
+	})
+
+	chatID, msgID := extract.CallbackTarget(payload.Update)
+	if _, err := payload.Bot.EditMessageText(ctx, &bot.EditMessageTextParams{
+		ChatID: chatID, MessageID: msgID, Text: sb.String(),
+		ReplyMarkup: &models.InlineKeyboardMarkup{InlineKeyboard: rows},
+		ParseMode:   models.ParseModeHTML,
+		LinkPreviewOptions: &models.LinkPreviewOptions{
+			IsDisabled: bot.True(),
+		},
+	}); err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelError,
+			"edit message to render drafts list failed",
 			slog.String("error", err.Error()),
 		)
 	}

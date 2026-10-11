@@ -107,7 +107,7 @@ func (q *Queries) ListPostMedia(ctx context.Context, postID int64) ([]PostMedium
 }
 
 const listUncachedMediaByPostID = `-- name: ListUncachedMediaByPostID :many
-SELECT id, post_id, kind, url, file_id, position FROM post_media WHERE file_id = NULL AND post_id = ?
+SELECT id, post_id, kind, url, file_id, position FROM post_media WHERE file_id IS NULL AND post_id = ?
 `
 
 func (q *Queries) ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error) {

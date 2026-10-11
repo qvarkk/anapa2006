@@ -15,7 +15,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-// TODO: resolve possible DRY with telegram/queue/schedule.go:HandleScheduleDetail()
+// TODO: resolve possible DRY with drafts.HandleDetail()
 func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		callback.Ack(ctx, b, update)
@@ -115,8 +115,15 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			{postVisibilityButton},
 			{
 				{
-					Text:         i18n.T(lang, i18n.BtnPostDelete),
-					CallbackData: callback.Format(callback.PostDelete, postID, callbackData),
+					Text:         i18n.T(lang, i18n.BtnPostArchive),
+					CallbackData: callback.Format(callback.PostArchive, postID, callbackData),
+				},
+			},
+			{
+				{
+					Text: i18n.T(lang, i18n.BtnPostDelete),
+					// After removal the post is gone, so go back to the list, not the detail.
+					CallbackData: callback.Format(callback.PostDelete, postID, origin),
 				},
 			},
 			{

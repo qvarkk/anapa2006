@@ -20,7 +20,6 @@ type Querier interface {
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
 	CountPosts(ctx context.Context) (int64, error)
 	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
-	CountScheduled(ctx context.Context) (int64, error)
 	CountSources(ctx context.Context) (int64, error)
 	CreateDraftMedia(ctx context.Context, arg CreateDraftMediaParams) error
 	CreatePendingReply(ctx context.Context, arg CreatePendingReplyParams) error
@@ -29,6 +28,8 @@ type Querier interface {
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
 	DeleteDraft(ctx context.Context, postID int64) error
 	DeletePendingReply(ctx context.Context, arg DeletePendingReplyParams) error
+	DeletePost(ctx context.Context, id int64) error
+	DeletePostMedia(ctx context.Context, postID int64) error
 	Deschedule(ctx context.Context, postID int64) error
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
@@ -38,7 +39,6 @@ type Querier interface {
 	GetPostScheduleByID(ctx context.Context, postID int64) (Schedule, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
 	GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error)
-	GetScheduleWithDraftData(ctx context.Context, postID int64) (GetScheduleWithDraftDataRow, error)
 	HidePost(ctx context.Context, id int64) error
 	IncrementRetryCount(ctx context.Context, id int64) error
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
@@ -47,15 +47,17 @@ type Querier interface {
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
-	ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
 	ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error)
 	MarkPostArchived(ctx context.Context, id int64) error
 	MarkPostFailed(ctx context.Context, id int64) error
 	MarkPostScheduled(ctx context.Context, id int64) error
+	MarkPostSendError(ctx context.Context, id int64) error
 	MarkPostSending(ctx context.Context, id int64) error
 	MarkPostSent(ctx context.Context, id int64) error
 	MarkScheduleSent(ctx context.Context, postID int64) error
+	MarkStaleSending(ctx context.Context, scheduledAt time.Time) error
+	ResetPostToNew(ctx context.Context, id int64) error
 	SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error
 	UnhidePost(ctx context.Context, id int64) error
 	UpdatePostDraftText(ctx context.Context, arg UpdatePostDraftTextParams) error

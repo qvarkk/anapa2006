@@ -7,20 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
-
-const countScheduled = `-- name: CountScheduled :one
-SELECT COUNT(*) FROM schedule
-`
-
-func (q *Queries) CountScheduled(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countScheduled)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
 
 const createSchedule = `-- name: CreateSchedule :exec
 INSERT INTO schedule (
@@ -66,38 +54,13 @@ func (q *Queries) GetPostScheduleByID(ctx context.Context, postID int64) (Schedu
 	return i, err
 }
 
-const getScheduleWithDraftData = `-- name: GetScheduleWithDraftData :one
-SELECT s.post_id, s.target_chat_id, s.scheduled_at, s.sent_at, pd.final_text, p.external_id FROM schedule s
-JOIN post_drafts pd ON pd.post_id = s.post_id
-JOIN posts p on p.id = pd.post_id
-WHERE s.post_id = ?
-`
-
-type GetScheduleWithDraftDataRow struct {
-	PostID       int64        `json:"post_id"`
-	TargetChatID int64        `json:"target_chat_id"`
-	ScheduledAt  time.Time    `json:"scheduled_at"`
-	SentAt       sql.NullTime `json:"sent_at"`
-	FinalText    string       `json:"final_text"`
-	ExternalID   string       `json:"external_id"`
-}
-
-func (q *Queries) GetScheduleWithDraftData(ctx context.Context, postID int64) (GetScheduleWithDraftDataRow, error) {
-	row := q.db.QueryRowContext(ctx, getScheduleWithDraftData, postID)
-	var i GetScheduleWithDraftDataRow
-	err := row.Scan(
-		&i.PostID,
-		&i.TargetChatID,
-		&i.ScheduledAt,
-		&i.SentAt,
-		&i.FinalText,
-		&i.ExternalID,
-	)
-	return i, err
-}
-
 const listDuePending = `-- name: ListDuePending :many
-SELECT post_id, target_chat_id, scheduled_at, sent_at FROM schedule WHERE scheduled_at <= ? ORDER BY scheduled_at DESC
+SELECT s.post_id, s.target_chat_id, s.scheduled_at, s.sent_at FROM schedule s
+JOIN posts p ON p.id = s.post_id
+WHERE s.scheduled_at <= ?
+  AND s.sent_at IS NULL
+  AND p.status = 'scheduled'
+ORDER BY s.scheduled_at DESC
 `
 
 func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error) {
@@ -114,59 +77,6 @@ func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]
 			&i.TargetChatID,
 			&i.ScheduledAt,
 			&i.SentAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listScheduledLatest = `-- name: ListScheduledLatest :many
-SELECT s.post_id, s.target_chat_id, s.scheduled_at, s.sent_at, pd.final_text, p.status FROM schedule s
-JOIN post_drafts pd ON pd.post_id = s.draft_id
-JOIN posts p on p.id = s.post_id
-WHERE s.status <> 'sent'
-ORDER BY s.scheduled_at DESC
-LIMIT ? OFFSET ?
-`
-
-type ListScheduledLatestParams struct {
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
-}
-
-type ListScheduledLatestRow struct {
-	PostID       int64        `json:"post_id"`
-	TargetChatID int64        `json:"target_chat_id"`
-	ScheduledAt  time.Time    `json:"scheduled_at"`
-	SentAt       sql.NullTime `json:"sent_at"`
-	FinalText    string       `json:"final_text"`
-	Status       string       `json:"status"`
-}
-
-func (q *Queries) ListScheduledLatest(ctx context.Context, arg ListScheduledLatestParams) ([]ListScheduledLatestRow, error) {
-	rows, err := q.db.QueryContext(ctx, listScheduledLatest, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListScheduledLatestRow
-	for rows.Next() {
-		var i ListScheduledLatestRow
-		if err := rows.Scan(
-			&i.PostID,
-			&i.TargetChatID,
-			&i.ScheduledAt,
-			&i.SentAt,
-			&i.FinalText,
-			&i.Status,
 		); err != nil {
 			return nil, err
 		}

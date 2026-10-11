@@ -19,7 +19,6 @@ const (
 	Start = "start"
 
 	Fetched = "menu:fetched"
-	Queued  = "menu:queued"
 
 	// lat:<page>
 	FetchedLatestPrefix = "lat:"
@@ -46,16 +45,6 @@ const (
 	PostDeletePrefix  = "post:d:"
 	PostDelete        = PostDeletePrefix + "%d:%s"
 
-	// q::<page>
-	QueueListPrefix = "q:list:"
-	QueueList       = QueueListPrefix + "%d"
-	QueueSentPrefix = "q:sent:"
-	QueueSent       = QueueSentPrefix + "%d"
-
-	// q:<sched_id>:<prev_callback>
-	QueueSchedulePrefix = "sched:"
-	QueueSchedule       = QueueSchedulePrefix + "%d:%s"
-
 	// draft
 	DraftsMenu = "draft:menu"
 	// draft:list:<page>
@@ -75,6 +64,9 @@ const (
 	DraftPromptDequeue         = DraftPromptDequeuePrefix + "%d:%s"
 	DraftPromptDeletePrefix    = "draft:p:d:"
 	DraftPromptDelete          = DraftPromptDeletePrefix + "%d:%s"
+	// draft:p:c:<post_id>:<prev_callback>
+	DraftPromptCustomPrefix = "draft:p:c:"
+	DraftPromptCustom       = DraftPromptCustomPrefix + "%d:%s"
 	// draft:c:<post_id>:<prev_callback>
 	DraftCreatePrefix = "draft:c:"
 	DraftCreate       = DraftCreatePrefix + "%d:%s"

@@ -55,6 +55,24 @@ func (q *Queries) CountPostsBySource(ctx context.Context, sourceID int64) (int64
 	return count, err
 }
 
+const deletePost = `-- name: DeletePost :exec
+DELETE FROM posts WHERE id = ?
+`
+
+func (q *Queries) DeletePost(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deletePost, id)
+	return err
+}
+
+const deletePostMedia = `-- name: DeletePostMedia :exec
+DELETE FROM post_media WHERE post_id = ?
+`
+
+func (q *Queries) DeletePostMedia(ctx context.Context, postID int64) error {
+	_, err := q.db.ExecContext(ctx, deletePostMedia, postID)
+	return err
+}
+
 const getPost = `-- name: GetPost :one
 SELECT id, source_id, external_id, raw_text, published_at, fetched_at, status, retry_count FROM posts WHERE id = ?
 `
@@ -309,6 +327,15 @@ func (q *Queries) MarkPostScheduled(ctx context.Context, id int64) error {
 	return err
 }
 
+const markPostSendError = `-- name: MarkPostSendError :exec
+UPDATE posts SET status = 'error_sending' WHERE id = ?
+`
+
+func (q *Queries) MarkPostSendError(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markPostSendError, id)
+	return err
+}
+
 const markPostSending = `-- name: MarkPostSending :exec
 UPDATE posts SET status = 'sending' WHERE id = ?
 `
@@ -324,6 +351,31 @@ UPDATE posts SET status = 'sent' WHERE id = ?
 
 func (q *Queries) MarkPostSent(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, markPostSent, id)
+	return err
+}
+
+const markStaleSending = `-- name: MarkStaleSending :exec
+UPDATE posts SET status = 'error_sending'
+WHERE status IN ('scheduled', 'sending')
+  AND EXISTS (
+    SELECT 1 FROM schedule sc
+    WHERE sc.post_id = posts.id
+      AND sc.sent_at IS NULL
+      AND sc.scheduled_at < ?
+  )
+`
+
+func (q *Queries) MarkStaleSending(ctx context.Context, scheduledAt time.Time) error {
+	_, err := q.db.ExecContext(ctx, markStaleSending, scheduledAt)
+	return err
+}
+
+const resetPostToNew = `-- name: ResetPostToNew :exec
+UPDATE posts SET status = 'new' WHERE id = ? AND status = 'fetch_error'
+`
+
+func (q *Queries) ResetPostToNew(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, resetPostToNew, id)
 	return err
 }
 

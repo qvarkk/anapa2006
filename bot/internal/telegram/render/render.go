@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
+	"qq/anapa2006/internal/moscow"
 	"qq/anapa2006/internal/telegram/extract"
 	"qq/anapa2006/internal/telegram/pagination"
 	"strings"
@@ -28,14 +29,6 @@ type RenderedPost struct {
 	PublishedAt time.Time
 	Snippet     string
 	Status      string
-	MediaCounts map[string]int
-}
-
-type RenderedSchedule struct {
-	ID          int64
-	ScheduledAt time.Time
-	Status      string
-	Text        string
 	MediaCounts map[string]int
 }
 
@@ -67,11 +60,6 @@ type renderPayload struct {
 type PostListPayload struct {
 	renderPayload
 	Posts []RenderedPost
-}
-
-type ScheduledListPayload struct {
-	renderPayload
-	Scheduled []RenderedSchedule
 }
 
 type DraftListPayload struct {
@@ -117,44 +105,6 @@ func PostListPage(ctx context.Context, payload PostListPayload) {
 	}
 }
 
-func ScheduleListPage(ctx context.Context, payload ScheduledListPayload) {
-	var sb strings.Builder
-	sb.WriteString(i18n.T(payload.Lang, i18n.ScheduledListHeader, payload.Total))
-	sb.WriteString("\n\n")
-
-	var rows [][]models.InlineKeyboardButton
-	for _, s := range payload.Scheduled {
-		sb.WriteString(i18n.T(payload.Lang, i18n.ScheduledListEntry,
-			s.ID, s.ScheduledAt.Format("02.01.2006 15:04"), ScheduleStatusLabel(payload.Lang, s.Status),
-			truncate(stripTagsForPreview(s.Text), truncateLength), AttachmentsSummary(s.MediaCounts),
-		))
-		sb.WriteString("\n\n")
-		rows = append(rows, []models.InlineKeyboardButton{
-			{Text: i18n.T(payload.Lang, i18n.BtnSelectSchedule, s.ID), CallbackData: payload.SelectCallback(s.ID)},
-		})
-	}
-	rows = append(rows, pagination.BuildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
-	rows = append(rows, []models.InlineKeyboardButton{
-		{Text: i18n.T(payload.Lang, i18n.BtnBack), CallbackData: payload.BackCallback},
-	})
-
-	chatID, msgID := extract.CallbackTarget(payload.Update)
-	if _, err := payload.Bot.EditMessageText(ctx, &bot.EditMessageTextParams{
-		ChatID: chatID, MessageID: msgID, Text: sb.String(),
-		ReplyMarkup: &models.InlineKeyboardMarkup{InlineKeyboard: rows},
-		ParseMode:   models.ParseModeHTML,
-		LinkPreviewOptions: &models.LinkPreviewOptions{
-			IsDisabled: bot.True(),
-		},
-	}); err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelError,
-			"edit message to render scheduled list failed",
-			slog.String("error", err.Error()),
-		)
-	}
-}
-
 func DraftListPage(ctx context.Context, payload DraftListPayload) {
 	var sb strings.Builder
 	sb.WriteString(i18n.T(payload.Lang, i18n.DraftsList, payload.Total))
@@ -164,7 +114,7 @@ func DraftListPage(ctx context.Context, payload DraftListPayload) {
 	for _, d := range payload.Drafts {
 		scheduledStr := i18n.T(payload.Lang, i18n.Unscheduled)
 		if d.ScheduledAt.Valid {
-			scheduledStr = d.ScheduledAt.Time.Format("02.01.2006 15:04")
+			scheduledStr = moscow.Format(d.ScheduledAt.Time)
 		}
 
 		sb.WriteString(i18n.T(payload.Lang, i18n.DraftDetail,

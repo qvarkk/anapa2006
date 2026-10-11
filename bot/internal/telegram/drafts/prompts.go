@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"qq/anapa2006/internal/db"
+	"qq/anapa2006/internal/domain"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram/callback"
@@ -76,7 +77,76 @@ func HandleEditTextPrompt(st *store.Store) bot.HandlerFunc {
 		if err := st.CreatePendingReply(ctx, db.CreatePendingReplyParams{
 			ChatID:          chatID,
 			PromptMessageID: int64(sent.ID),
-			Action:          "awaiting_text",
+			Action:          domain.PendingActionAwaitingText,
+			PostID:          draft.PostID,
+			Origin:          origin,
+		}); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"create pending reply",
+				slog.Int64("draft_id", draft.PostID),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+}
+
+// HandleCustomSchedulePrompt asks the user for a Moscow date and time to
+// publish the draft at. The answer arrives as a reply and is handled by
+// reply.HandlePendingReply.
+func HandleCustomSchedulePrompt(st *store.Store) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
+		callback.Ack(ctx, b, update)
+
+		data, origin, err := extract.BackNavigation(update, 3, 1)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"parse back navagation",
+				slog.String("error", err.Error()),
+			)
+			return
+		}
+		postID := data[0]
+
+		draft, err := st.GetPostDraftByID(ctx, postID)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"get draft by id",
+				slog.Int64("post_id", postID),
+				slog.String("error", err.Error()),
+			)
+			return
+		}
+
+		chatID, _ := extract.CallbackTarget(update)
+		lang := extract.Lang(ctx)
+
+		sent, err := b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID:    chatID,
+			Text:      i18n.T(lang, i18n.ScheduleCustomPrompt, draft.FinalText),
+			ParseMode: models.ParseModeHTML,
+			ReplyMarkup: &models.ForceReply{
+				ForceReply:            true,
+				Selective:             true,
+				InputFieldPlaceholder: i18n.T(lang, i18n.ScheduleCustomPlaceholder),
+			},
+		})
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"send custom schedule prompt",
+				slog.Int64("draft_id", draft.PostID),
+				slog.String("error", err.Error()),
+			)
+			return
+		}
+
+		if err := st.CreatePendingReply(ctx, db.CreatePendingReplyParams{
+			ChatID:          chatID,
+			PromptMessageID: int64(sent.ID),
+			Action:          domain.PendingActionAwaitingSchedule,
 			PostID:          draft.PostID,
 			Origin:          origin,
 		}); err != nil {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
+	"qq/anapa2006/internal/moscow"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram/callback"
 	"qq/anapa2006/internal/telegram/extract"
@@ -81,7 +82,7 @@ func HandleDetail(st *store.Store) bot.HandlerFunc {
 				CallbackData: callback.Format(callback.DraftDequeue, draft.PostID, thisCallback),
 			})
 
-			scheduleTime = schedule.ScheduledAt.Format("02.01.2006 15:04")
+			scheduleTime = moscow.Format(schedule.ScheduledAt)
 		} else {
 			queueButtons = append(queueButtons, models.InlineKeyboardButton{
 				Text:         i18n.T(lang, i18n.BtnDraftQueue),

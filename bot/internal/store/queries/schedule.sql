@@ -1,5 +1,10 @@
 -- name: ListDuePending :many
-SELECT * FROM schedule WHERE scheduled_at <= ? ORDER BY scheduled_at DESC;
+SELECT s.* FROM schedule s
+JOIN posts p ON p.id = s.post_id
+WHERE s.scheduled_at <= ?
+  AND s.sent_at IS NULL
+  AND p.status = 'scheduled'
+ORDER BY s.scheduled_at DESC;
 
 -- name: MarkScheduleSent :exec
 UPDATE schedule SET sent_at = CURRENT_TIMESTAMP WHERE post_id = ?;
@@ -13,23 +18,6 @@ INSERT INTO schedule (
 ) VALUES (
   ?, ?, ?
 );
-
--- name: CountScheduled :one
-SELECT COUNT(*) FROM schedule;
-
--- name: ListScheduledLatest :many
-SELECT s.*, pd.final_text, p.status FROM schedule s
-JOIN post_drafts pd ON pd.post_id = s.draft_id
-JOIN posts p on p.id = s.post_id
-WHERE s.status <> 'sent'
-ORDER BY s.scheduled_at DESC
-LIMIT ? OFFSET ?;
-
--- name: GetScheduleWithDraftData :one
-SELECT s.*, pd.final_text, p.external_id FROM schedule s
-JOIN post_drafts pd ON pd.post_id = s.post_id
-JOIN posts p on p.id = pd.post_id
-WHERE s.post_id = ?;
 
 -- name: Deschedule :exec
 DELETE FROM schedule WHERE post_id = ?;

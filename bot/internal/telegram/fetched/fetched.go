@@ -231,7 +231,7 @@ func HandleFetchedChannelPosts(st *store.Store) bot.HandlerFunc {
 		payload := render.PostListPayload{
 			Bot: b, Update: update, Lang: lang, Page: postPage, TotalPages: tp, Total: int(total),
 			PrevCallback: prev, NextCallback: next, Posts: posts,
-			BackCallback: callback.Format(callback.FetchedChannelPosts, sourceID, postPage, grpPage),
+			BackCallback: callback.Format(callback.FetchedChannels, grpPage),
 			SelectCallback: func(id int64) string {
 				return callback.Format(
 					callback.FetchedPost, id,

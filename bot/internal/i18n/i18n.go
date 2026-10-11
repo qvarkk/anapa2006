@@ -49,18 +49,18 @@ const (
 	BtnSkip Key = "btn_skip"
 
 	// Start menu buttons
-	BtnOpenMenu  Key = "btn_open_menu"
-	BtnNewPosts  Key = "btn_new_posts"
-	BtnScheduled Key = "btn_scheduled"
+	BtnOpenMenu Key = "btn_open_menu"
+	BtnNewPosts Key = "btn_new_posts"
 
 	// Posts statuses
-	PostStatusNew       Key = "post_status_new"
-	PostStatusSkipped   Key = "post_status_skipped"
-	PostStatusScheduled Key = "post_status_scheduled"
-	PostStatusSending   Key = "post_status_sending"
-	PostStatusSent      Key = "post_status_sent"
-	PostStatusError     Key = "post_status_error"
-	PostStatusArchived  Key = "post_status_archived"
+	PostStatusNew          Key = "post_status_new"
+	PostStatusSkipped      Key = "post_status_skipped"
+	PostStatusScheduled    Key = "post_status_scheduled"
+	PostStatusSending      Key = "post_status_sending"
+	PostStatusSent         Key = "post_status_sent"
+	PostStatusError        Key = "post_status_error"
+	PostStatusArchived     Key = "post_status_archived"
+	PostStatusErrorSending Key = "post_status_error_sending"
 
 	// Post buttons
 	BtnPostShow    Key = "btn_post_show"
@@ -82,28 +82,15 @@ const (
 	PostDetail     Key = "post_detail"
 	BtnSelectPost  Key = "btn_select_post"
 
-	// Scheduled lists (later)
-	Scheduled           Key = "scheduled"
-	ScheduledListHeader Key = "scheduled_list_header"
-	ScheduledListEntry  Key = "scheduled_list_entry"
-	ScheduledDetail     Key = "scheduled_details"
-	BtnSelectSchedule   Key = "btn_select_schedule"
-
-	// Scheduled buttons
-	BtnScheduledList     Key = "btn_scheduled_list"
-	BtnScheduledSent     Key = "btn_scheduled_sent"
-	BtnScheduledSettings Key = "btn_scheduled_settings"
-
-	// Scheduled messages statuses
-	ScheduledStatusPending   Key = "scheduled_status_pending"
-	ScheduledStatusSending   Key = "scheduled_status_sending"
-	ScheduledStatusSent      Key = "scheduled_status_sent"
-	ScheduledStatusCancelled Key = "scheduled_status_cancelled"
-
 	// Schedule headers
-	SchedulePrompt  Key = "schedule_prompt"
 	ScheduledAt     Key = "scheduled_at"
 	ScheduleSkipped Key = "schedule_skipped"
+
+	// Custom schedule input
+	ScheduleCustomPrompt      Key = "schedule_custom_prompt"
+	ScheduleCustomPlaceholder Key = "schedule_custom_placeholder"
+	ScheduleCustomInvalid     Key = "schedule_custom_invalid"
+	ScheduleCustomPast        Key = "schedule_custom_past"
 
 	// Schedule btns
 	ScheduleBtn30m    Key = "schedule_btn_30m"

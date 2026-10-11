@@ -59,10 +59,10 @@ func HandleList(st *store.Store) bot.HandlerFunc {
 
 		prev, next := callback.FirstPage, callback.LastPage
 		if page > 0 {
-			prev = callback.Format(callback.QueueList, page-1)
+			prev = callback.Format(callback.DraftsList, page-1)
 		}
 		if page < tp-1 {
-			next = callback.Format(callback.QueueList, page+1)
+			next = callback.Format(callback.DraftsList, page+1)
 		}
 
 		lang := extract.Lang(ctx)

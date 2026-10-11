@@ -26,7 +26,6 @@ simple:
   #
   btn_open_menu: "📃 Открыть меню"
   btn_new_posts: "🆕 Новые посты"
-  btn_scheduled: "🕒 Отложенные посты"
   #
   post_status_new: "🆕 Новый"
   post_status_skipped: "⛈️ Скрыт"
@@ -35,6 +34,7 @@ simple:
   post_status_sent: "📨 Отправлен"
   post_status_error: "👾 Ошибка"
   post_status_archived: "📦 В архиве"
+  post_status_error_sending: "⚠️ Ошибка отправки"
   #
   btn_post_show: "👁️ Показать"
   btn_post_hide: "⛈️ Скрыть"
@@ -67,11 +67,24 @@ simple:
 
     <blockquote>%[6]s</blockquote>
   #
-  schedule_prompt: |
-    🚚 Выберите время для публикации поста.
+  schedule_custom_prompt: |
+    🕓 Введите дату и время публикации (московское время):
+    • ЧЧ:ММ — сегодня
+    • ДД.ММ ЧЧ:ММ — в этом году
+    • ДД.ММ.ГГГГ ЧЧ:ММ — конкретный день
+
     📩 Итоговый текст поста:
 
     %s
+  schedule_custom_placeholder: "ДД.ММ ЧЧ:ММ или ЧЧ:ММ"
+  schedule_custom_invalid: |
+    ❓ Не получилось распознать дату и время.
+
+    Ответьте на сообщение с запросом ещё раз — ДД.ММ ЧЧ:ММ или ЧЧ:ММ (время московское) — либо вернитесь назад.
+  schedule_custom_past: |
+    ❓ Это время уже прошло.
+
+    Укажите будущее время, ответив на сообщение с запросом, либо вернитесь назад.
   scheduled_at: |
     🛫 Публикация была успешно установлена на %s
   schedule_skipped: |
@@ -91,35 +104,6 @@ simple:
     %s
   edit_placeholder: "Новый текст поста..."
   #
-  scheduled: |
-    ✨ В этом разделе можно посмотреть посты, которые, установленные на отложенную публикацию
-
-    ⬇️ Выберите опцию
-  scheduled_list_header: "👁️ На отложенной публикации %d постов:"
-  scheduled_list_entry: |
-    🫆 <b>ID:</b> %[1]d
-    🗓️ %[2]s
-    %[3]s
-    💬 %[4]s
-    %[5]s
-  scheduled_details: |
-    🗓️ Время публикации: %[1]s
-    %[2]s
-    🖼️ Вложения: %[3]s
-    🔗 <a href="%[4]s">Ссылка на исходный пост</a>
-
-    <blockquote>%[5]s</blockquote>
-  btn_select_schedule: "🫆 ID %d"
-  #
-  scheduled_status_pending: "⏲️ Ожидает публикации"
-  scheduled_status_sending: "⏳ Отправляется (или ошибка)"
-  scheduled_status_sent: "📨 Отправлено"
-  scheduled_status_cancelled: "🛑 Отменено"
-  #
-  btn_scheduled_list: "📋 Список отложенных"
-  btn_scheduled_sent: "⏰ Опубликованные посты"
-  btn_scheduled_settings: "⚙️ Настройки отложенных"
-  #
   drafts_menu: |
     ✨ В этом разделе можно просмотреть и отредактировать черновики, созданные на основе постов.
 
@@ -132,7 +116,7 @@ simple:
     💬: %[4]s
     🖼️ Вложения: %[5]s
   #
-  draft_created: "🏁 Черновик был создан успешно!"
+  draft_created: "🏁 Черновик был создан успешно! 🫆 ID: %d"
   #
   promps_draft_edit_text: "Введите новый текст"
   promps_draft_edit_media: "Приложите новое фото"

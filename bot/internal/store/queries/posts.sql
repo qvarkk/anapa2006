@@ -64,3 +64,25 @@ UPDATE posts SET status = 'fetch_error' WHERE id = ?;
 
 -- name: MarkPostArchived :exec
 UPDATE posts SET status = 'archived' WHERE id = ?;
+
+-- name: MarkPostSendError :exec
+UPDATE posts SET status = 'error_sending' WHERE id = ?;
+
+-- name: ResetPostToNew :exec
+UPDATE posts SET status = 'new' WHERE id = ? AND status = 'fetch_error';
+
+-- name: MarkStaleSending :exec
+UPDATE posts SET status = 'error_sending'
+WHERE status IN ('scheduled', 'sending')
+  AND EXISTS (
+    SELECT 1 FROM schedule sc
+    WHERE sc.post_id = posts.id
+      AND sc.sent_at IS NULL
+      AND sc.scheduled_at < ?
+  );
+
+-- name: DeletePostMedia :exec
+DELETE FROM post_media WHERE post_id = ?;
+
+-- name: DeletePost :exec
+DELETE FROM posts WHERE id = ?;

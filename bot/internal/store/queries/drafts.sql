@@ -29,7 +29,6 @@ SELECT COUNT(*) FROM post_drafts;
 SELECT pd.*, p.status, s.scheduled_at FROM post_drafts pd
 JOIN posts p ON p.id = pd.post_id
 LEFT JOIN schedule s ON s.post_id = pd.post_id
-WHERE p.status <> 'sent'
 ORDER BY s.scheduled_at DESC
 LIMIT ? OFFSET ?;
 

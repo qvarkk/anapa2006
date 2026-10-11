@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/i18n"
+	"qq/anapa2006/internal/moscow"
 	"qq/anapa2006/internal/store"
 	"qq/anapa2006/internal/telegram/callback"
 	"qq/anapa2006/internal/telegram/extract"
@@ -176,7 +177,7 @@ func HandleQueue(st *store.Store, channelID int64) bot.HandlerFunc {
 		b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID:    chatID,
 			MessageID: msgID,
-			Text:      i18n.T(lang, i18n.ScheduledAt, scheduledAt.Format("02.01.2006 15:04")),
+			Text:      i18n.T(lang, i18n.ScheduledAt, moscow.Format(scheduledAt)),
 			ReplyMarkup: &models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
 					{

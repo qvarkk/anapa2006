@@ -10,7 +10,12 @@ import (
 	"time"
 )
 
-const DodgeSleepTimeMs = 1200
+const (
+	DodgeSleepTimeMs = 1200
+	// A post claimed for sending that is still not resolved this long after its
+	// scheduled time is considered a failed send (crash, restart, silent error).
+	StaleSendGrace = 5 * time.Minute
+)
 
 type Sender interface {
 	SendMessage(ctx context.Context, chatID int64, text string) error
@@ -54,6 +59,14 @@ func (s *Scheduler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (s *Scheduler) Tick(ctx context.Context) {
+	if err := s.store.MarkStaleSending(ctx, time.Now().Add(-StaleSendGrace)); err != nil {
+		slog.LogAttrs(
+			ctx, slog.LevelWarn,
+			"mark stale scheduled posts as send errors",
+			slog.String("error", err.Error()),
+		)
+	}
+
 	due, err := s.store.ListDuePending(ctx, time.Now())
 	if err != nil {
 		slog.LogAttrs(
@@ -135,6 +148,15 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 			slog.Int64("post_id", draft.PostID),
 			slog.String("error", sendErr.Error()),
 		)
+
+		if err := s.store.MarkPostSendError(ctx, claimed.ID); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"mark post send error",
+				slog.Int64("post_id", claimed.ID),
+				slog.String("error", err.Error()),
+			)
+		}
 		return
 	}
 

@@ -20,7 +20,7 @@ func ScheduleKeyboard(draftID int64, origin string, lang i18n.Lang) *models.Inli
 		{mk(i18n.ScheduleBtn3hr, callback.In3hr)},
 		{mk(i18n.ScheduleBtn6hr, callback.In6hr)},
 		{mk(i18n.ScheduleBtn12hr, callback.In12hr)},
-		{{Text: i18n.T(lang, i18n.ScheduleBtnCustom), CallbackData: callback.Noop}},
+		{{Text: i18n.T(lang, i18n.ScheduleBtnCustom), CallbackData: callback.Format(callback.DraftPromptCustom, draftID, origin)}},
 		{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: origin}},
 	}}
 }

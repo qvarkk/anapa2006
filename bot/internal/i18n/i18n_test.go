@@ -19,13 +19,15 @@ var allSimpleKeys = []Key{
 
 	BtnOpenMenu,
 	BtnNewPosts,
-	BtnScheduled,
 
 	PostStatusNew,
 	PostStatusSkipped,
 	PostStatusScheduled,
+	PostStatusSending,
 	PostStatusSent,
 	PostStatusError,
+	PostStatusArchived,
+	PostStatusErrorSending,
 
 	FetchMenu,
 	FetchChannelsMenu,
@@ -38,24 +40,13 @@ var allSimpleKeys = []Key{
 	PostDetail,
 	BtnSelectPost,
 
-	Scheduled,
-	ScheduledListHeader,
-	ScheduledListEntry,
-	ScheduledDetail,
-	BtnSelectSchedule,
-
-	BtnScheduledList,
-	BtnScheduledSent,
-	BtnScheduledSettings,
-
-	ScheduledStatusPending,
-	ScheduledStatusSending,
-	ScheduledStatusSent,
-	ScheduledStatusCancelled,
-
-	SchedulePrompt,
 	ScheduledAt,
 	ScheduleSkipped,
+
+	ScheduleCustomPrompt,
+	ScheduleCustomPlaceholder,
+	ScheduleCustomInvalid,
+	ScheduleCustomPast,
 
 	ScheduleBtn30m,
 	ScheduleBtn1hr,

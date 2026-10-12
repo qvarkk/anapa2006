@@ -94,6 +94,27 @@ func (q *Queries) GetSourceByID(ctx context.Context, id int64) (Source, error) {
 	return i, err
 }
 
+const getSourceStats = `-- name: GetSourceStats :one
+SELECT
+  CAST(COUNT(*) AS INTEGER) AS fetched,
+  CAST(COALESCE(SUM(CASE WHEN status = 'fetch_error' THEN 1 ELSE 0 END), 0) AS INTEGER) AS failed,
+  CAST(COALESCE(SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END), 0) AS INTEGER) AS sent
+FROM posts WHERE source_id = ?
+`
+
+type GetSourceStatsRow struct {
+	Fetched int64 `json:"fetched"`
+	Failed  int64 `json:"failed"`
+	Sent    int64 `json:"sent"`
+}
+
+func (q *Queries) GetSourceStats(ctx context.Context, sourceID int64) (GetSourceStatsRow, error) {
+	row := q.db.QueryRowContext(ctx, getSourceStats, sourceID)
+	var i GetSourceStatsRow
+	err := row.Scan(&i.Fetched, &i.Failed, &i.Sent)
+	return i, err
+}
+
 const listSources = `-- name: ListSources :many
 SELECT id, channel_handle, active FROM sources ORDER BY channel_handle ASC LIMIT ? OFFSET ?
 `
@@ -157,6 +178,62 @@ func (q *Queries) ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWi
 	for rows.Next() {
 		var i ListSourcesWithNewCountRow
 		if err := rows.Scan(&i.ID, &i.ChannelHandle, &i.NewCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSourcesWithStats = `-- name: ListSourcesWithStats :many
+SELECT s.id, s.channel_handle, s.active,
+  CAST(COUNT(p.id) AS INTEGER) AS fetched,
+  CAST(COALESCE(SUM(CASE WHEN p.status = 'fetch_error' THEN 1 ELSE 0 END), 0) AS INTEGER) AS failed,
+  CAST(COALESCE(SUM(CASE WHEN p.status = 'sent' THEN 1 ELSE 0 END), 0) AS INTEGER) AS sent
+FROM sources s
+LEFT JOIN posts p ON p.source_id = s.id
+GROUP BY s.id, s.channel_handle, s.active
+ORDER BY s.channel_handle
+LIMIT ? OFFSET ?
+`
+
+type ListSourcesWithStatsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListSourcesWithStatsRow struct {
+	ID            int64  `json:"id"`
+	ChannelHandle string `json:"channel_handle"`
+	Active        int64  `json:"active"`
+	Fetched       int64  `json:"fetched"`
+	Failed        int64  `json:"failed"`
+	Sent          int64  `json:"sent"`
+}
+
+func (q *Queries) ListSourcesWithStats(ctx context.Context, arg ListSourcesWithStatsParams) ([]ListSourcesWithStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listSourcesWithStats, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSourcesWithStatsRow
+	for rows.Next() {
+		var i ListSourcesWithStatsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelHandle,
+			&i.Active,
+			&i.Fetched,
+			&i.Failed,
+			&i.Sent,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

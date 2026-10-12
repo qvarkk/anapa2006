@@ -42,19 +42,47 @@ func (q *Queries) CheckPostDraftExists(ctx context.Context, postID int64) (bool,
 	return exists, err
 }
 
-const countDrafts = `-- name: CountDrafts :one
-SELECT COUNT(*) FROM post_drafts
+const countActiveDrafts = `-- name: CountActiveDrafts :one
+SELECT COUNT(*) FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+WHERE p.status NOT IN ('sent', 'error_sending')
 `
 
-func (q *Queries) CountDrafts(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countDrafts)
+func (q *Queries) CountActiveDrafts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countActiveDrafts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countFailedDrafts = `-- name: CountFailedDrafts :one
+SELECT COUNT(*) FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+WHERE p.status = 'error_sending'
+`
+
+func (q *Queries) CountFailedDrafts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countFailedDrafts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPostedDrafts = `-- name: CountPostedDrafts :one
+SELECT COUNT(*) FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+WHERE p.status = 'sent'
+`
+
+func (q *Queries) CountPostedDrafts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPostedDrafts)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const createPostDraft = `-- name: CreatePostDraft :one
-INSERT INTO post_drafts (post_id, final_text) VALUES (?, ?) RETURNING post_id, final_text, created_at
+INSERT INTO post_drafts (post_id, final_text) VALUES (?, ?) RETURNING post_id, final_text, target_channel_id, created_at
 `
 
 type CreatePostDraftParams struct {
@@ -65,7 +93,12 @@ type CreatePostDraftParams struct {
 func (q *Queries) CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error) {
 	row := q.db.QueryRowContext(ctx, createPostDraft, arg.PostID, arg.FinalText)
 	var i PostDraft
-	err := row.Scan(&i.PostID, &i.FinalText, &i.CreatedAt)
+	err := row.Scan(
+		&i.PostID,
+		&i.FinalText,
+		&i.TargetChannelID,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
@@ -79,52 +112,72 @@ func (q *Queries) DeleteDraft(ctx context.Context, postID int64) error {
 }
 
 const getPostDraftByID = `-- name: GetPostDraftByID :one
-SELECT post_id, final_text, created_at FROM post_drafts WHERE post_id = ?
+SELECT post_id, final_text, target_channel_id, created_at FROM post_drafts WHERE post_id = ?
 `
 
 func (q *Queries) GetPostDraftByID(ctx context.Context, postID int64) (PostDraft, error) {
 	row := q.db.QueryRowContext(ctx, getPostDraftByID, postID)
 	var i PostDraft
-	err := row.Scan(&i.PostID, &i.FinalText, &i.CreatedAt)
+	err := row.Scan(
+		&i.PostID,
+		&i.FinalText,
+		&i.TargetChannelID,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
-const listDraftsLatest = `-- name: ListDraftsLatest :many
-SELECT pd.post_id, pd.final_text, pd.created_at, p.status, s.scheduled_at FROM post_drafts pd
+const listActiveDrafts = `-- name: ListActiveDrafts :many
+SELECT pd.post_id, pd.final_text, pd.created_at, pd.target_channel_id,
+       p.status, s.scheduled_at, s.sent_at, s.sent_message_id, s.last_error,
+       t.handle AS target_handle
+FROM post_drafts pd
 JOIN posts p ON p.id = pd.post_id
 LEFT JOIN schedule s ON s.post_id = pd.post_id
-ORDER BY s.scheduled_at DESC
+LEFT JOIN target_channels t ON t.id = pd.target_channel_id
+WHERE p.status NOT IN ('sent', 'error_sending')
+ORDER BY COALESCE(s.scheduled_at, pd.created_at) DESC
 LIMIT ? OFFSET ?
 `
 
-type ListDraftsLatestParams struct {
+type ListActiveDraftsParams struct {
 	Limit  int64 `json:"limit"`
 	Offset int64 `json:"offset"`
 }
 
-type ListDraftsLatestRow struct {
-	PostID      int64        `json:"post_id"`
-	FinalText   string       `json:"final_text"`
-	CreatedAt   time.Time    `json:"created_at"`
-	Status      string       `json:"status"`
-	ScheduledAt sql.NullTime `json:"scheduled_at"`
+type ListActiveDraftsRow struct {
+	PostID          int64          `json:"post_id"`
+	FinalText       string         `json:"final_text"`
+	CreatedAt       time.Time      `json:"created_at"`
+	TargetChannelID sql.NullInt64  `json:"target_channel_id"`
+	Status          string         `json:"status"`
+	ScheduledAt     sql.NullTime   `json:"scheduled_at"`
+	SentAt          sql.NullTime   `json:"sent_at"`
+	SentMessageID   sql.NullInt64  `json:"sent_message_id"`
+	LastError       sql.NullString `json:"last_error"`
+	TargetHandle    sql.NullString `json:"target_handle"`
 }
 
-func (q *Queries) ListDraftsLatest(ctx context.Context, arg ListDraftsLatestParams) ([]ListDraftsLatestRow, error) {
-	rows, err := q.db.QueryContext(ctx, listDraftsLatest, arg.Limit, arg.Offset)
+func (q *Queries) ListActiveDrafts(ctx context.Context, arg ListActiveDraftsParams) ([]ListActiveDraftsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveDrafts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListDraftsLatestRow
+	var items []ListActiveDraftsRow
 	for rows.Next() {
-		var i ListDraftsLatestRow
+		var i ListActiveDraftsRow
 		if err := rows.Scan(
 			&i.PostID,
 			&i.FinalText,
 			&i.CreatedAt,
+			&i.TargetChannelID,
 			&i.Status,
 			&i.ScheduledAt,
+			&i.SentAt,
+			&i.SentMessageID,
+			&i.LastError,
+			&i.TargetHandle,
 		); err != nil {
 			return nil, err
 		}
@@ -137,6 +190,150 @@ func (q *Queries) ListDraftsLatest(ctx context.Context, arg ListDraftsLatestPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const listFailedDrafts = `-- name: ListFailedDrafts :many
+SELECT pd.post_id, pd.final_text, pd.created_at, pd.target_channel_id,
+       p.status, s.scheduled_at, s.sent_at, s.sent_message_id, s.last_error,
+       t.handle AS target_handle
+FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+LEFT JOIN schedule s ON s.post_id = pd.post_id
+LEFT JOIN target_channels t ON t.id = pd.target_channel_id
+WHERE p.status = 'error_sending'
+ORDER BY COALESCE(s.scheduled_at, pd.created_at) DESC
+LIMIT ? OFFSET ?
+`
+
+type ListFailedDraftsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListFailedDraftsRow struct {
+	PostID          int64          `json:"post_id"`
+	FinalText       string         `json:"final_text"`
+	CreatedAt       time.Time      `json:"created_at"`
+	TargetChannelID sql.NullInt64  `json:"target_channel_id"`
+	Status          string         `json:"status"`
+	ScheduledAt     sql.NullTime   `json:"scheduled_at"`
+	SentAt          sql.NullTime   `json:"sent_at"`
+	SentMessageID   sql.NullInt64  `json:"sent_message_id"`
+	LastError       sql.NullString `json:"last_error"`
+	TargetHandle    sql.NullString `json:"target_handle"`
+}
+
+func (q *Queries) ListFailedDrafts(ctx context.Context, arg ListFailedDraftsParams) ([]ListFailedDraftsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFailedDrafts, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListFailedDraftsRow
+	for rows.Next() {
+		var i ListFailedDraftsRow
+		if err := rows.Scan(
+			&i.PostID,
+			&i.FinalText,
+			&i.CreatedAt,
+			&i.TargetChannelID,
+			&i.Status,
+			&i.ScheduledAt,
+			&i.SentAt,
+			&i.SentMessageID,
+			&i.LastError,
+			&i.TargetHandle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPostedDrafts = `-- name: ListPostedDrafts :many
+SELECT pd.post_id, pd.final_text, pd.created_at, pd.target_channel_id,
+       p.status, s.scheduled_at, s.sent_at, s.sent_message_id, s.last_error,
+       t.handle AS target_handle
+FROM post_drafts pd
+JOIN posts p ON p.id = pd.post_id
+LEFT JOIN schedule s ON s.post_id = pd.post_id
+LEFT JOIN target_channels t ON t.id = pd.target_channel_id
+WHERE p.status = 'sent'
+ORDER BY s.sent_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListPostedDraftsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type ListPostedDraftsRow struct {
+	PostID          int64          `json:"post_id"`
+	FinalText       string         `json:"final_text"`
+	CreatedAt       time.Time      `json:"created_at"`
+	TargetChannelID sql.NullInt64  `json:"target_channel_id"`
+	Status          string         `json:"status"`
+	ScheduledAt     sql.NullTime   `json:"scheduled_at"`
+	SentAt          sql.NullTime   `json:"sent_at"`
+	SentMessageID   sql.NullInt64  `json:"sent_message_id"`
+	LastError       sql.NullString `json:"last_error"`
+	TargetHandle    sql.NullString `json:"target_handle"`
+}
+
+func (q *Queries) ListPostedDrafts(ctx context.Context, arg ListPostedDraftsParams) ([]ListPostedDraftsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostedDrafts, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPostedDraftsRow
+	for rows.Next() {
+		var i ListPostedDraftsRow
+		if err := rows.Scan(
+			&i.PostID,
+			&i.FinalText,
+			&i.CreatedAt,
+			&i.TargetChannelID,
+			&i.Status,
+			&i.ScheduledAt,
+			&i.SentAt,
+			&i.SentMessageID,
+			&i.LastError,
+			&i.TargetHandle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setDraftTargetChannel = `-- name: SetDraftTargetChannel :exec
+UPDATE post_drafts SET target_channel_id = ? WHERE post_id = ?
+`
+
+type SetDraftTargetChannelParams struct {
+	TargetChannelID sql.NullInt64 `json:"target_channel_id"`
+	PostID          int64         `json:"post_id"`
+}
+
+func (q *Queries) SetDraftTargetChannel(ctx context.Context, arg SetDraftTargetChannelParams) error {
+	_, err := q.db.ExecContext(ctx, setDraftTargetChannel, arg.TargetChannelID, arg.PostID)
+	return err
 }
 
 const updatePostDraftText = `-- name: UpdatePostDraftText :exec

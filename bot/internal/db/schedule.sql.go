@@ -7,25 +7,25 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
 const createSchedule = `-- name: CreateSchedule :exec
 INSERT INTO schedule (
-  post_id, target_chat_id, scheduled_at
+  post_id, scheduled_at
 ) VALUES (
-  ?, ?, ?
+  ?, ?
 )
 `
 
 type CreateScheduleParams struct {
-	PostID       int64     `json:"post_id"`
-	TargetChatID int64     `json:"target_chat_id"`
-	ScheduledAt  time.Time `json:"scheduled_at"`
+	PostID      int64     `json:"post_id"`
+	ScheduledAt time.Time `json:"scheduled_at"`
 }
 
 func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) error {
-	_, err := q.db.ExecContext(ctx, createSchedule, arg.PostID, arg.TargetChatID, arg.ScheduledAt)
+	_, err := q.db.ExecContext(ctx, createSchedule, arg.PostID, arg.ScheduledAt)
 	return err
 }
 
@@ -39,7 +39,7 @@ func (q *Queries) Deschedule(ctx context.Context, postID int64) error {
 }
 
 const getPostScheduleByID = `-- name: GetPostScheduleByID :one
-SELECT post_id, target_chat_id, scheduled_at, sent_at FROM schedule WHERE post_id = ?
+SELECT post_id, scheduled_at, sent_at, sent_message_id, last_error FROM schedule WHERE post_id = ?
 `
 
 func (q *Queries) GetPostScheduleByID(ctx context.Context, postID int64) (Schedule, error) {
@@ -47,36 +47,56 @@ func (q *Queries) GetPostScheduleByID(ctx context.Context, postID int64) (Schedu
 	var i Schedule
 	err := row.Scan(
 		&i.PostID,
-		&i.TargetChatID,
 		&i.ScheduledAt,
 		&i.SentAt,
+		&i.SentMessageID,
+		&i.LastError,
 	)
 	return i, err
 }
 
 const listDuePending = `-- name: ListDuePending :many
-SELECT s.post_id, s.target_chat_id, s.scheduled_at, s.sent_at FROM schedule s
+SELECT s.post_id, s.scheduled_at, s.sent_at, s.sent_message_id, s.last_error,
+       t.id AS target_channel_id, t.chat_id, t.handle
+FROM schedule s
 JOIN posts p ON p.id = s.post_id
+JOIN post_drafts pd ON pd.post_id = s.post_id
+JOIN target_channels t ON t.id = pd.target_channel_id
 WHERE s.scheduled_at <= ?
   AND s.sent_at IS NULL
   AND p.status = 'scheduled'
 ORDER BY s.scheduled_at DESC
 `
 
-func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error) {
+type ListDuePendingRow struct {
+	PostID          int64          `json:"post_id"`
+	ScheduledAt     time.Time      `json:"scheduled_at"`
+	SentAt          sql.NullTime   `json:"sent_at"`
+	SentMessageID   sql.NullInt64  `json:"sent_message_id"`
+	LastError       sql.NullString `json:"last_error"`
+	TargetChannelID int64          `json:"target_channel_id"`
+	ChatID          int64          `json:"chat_id"`
+	Handle          sql.NullString `json:"handle"`
+}
+
+func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]ListDuePendingRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDuePending, scheduledAt)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Schedule
+	var items []ListDuePendingRow
 	for rows.Next() {
-		var i Schedule
+		var i ListDuePendingRow
 		if err := rows.Scan(
 			&i.PostID,
-			&i.TargetChatID,
 			&i.ScheduledAt,
 			&i.SentAt,
+			&i.SentMessageID,
+			&i.LastError,
+			&i.TargetChannelID,
+			&i.ChatID,
+			&i.Handle,
 		); err != nil {
 			return nil, err
 		}
@@ -91,11 +111,30 @@ func (q *Queries) ListDuePending(ctx context.Context, scheduledAt time.Time) ([]
 	return items, nil
 }
 
-const markScheduleSent = `-- name: MarkScheduleSent :exec
-UPDATE schedule SET sent_at = CURRENT_TIMESTAMP WHERE post_id = ?
+const markScheduleSendError = `-- name: MarkScheduleSendError :exec
+UPDATE schedule SET last_error = ? WHERE post_id = ?
 `
 
-func (q *Queries) MarkScheduleSent(ctx context.Context, postID int64) error {
-	_, err := q.db.ExecContext(ctx, markScheduleSent, postID)
+type MarkScheduleSendErrorParams struct {
+	LastError sql.NullString `json:"last_error"`
+	PostID    int64          `json:"post_id"`
+}
+
+func (q *Queries) MarkScheduleSendError(ctx context.Context, arg MarkScheduleSendErrorParams) error {
+	_, err := q.db.ExecContext(ctx, markScheduleSendError, arg.LastError, arg.PostID)
+	return err
+}
+
+const markScheduleSent = `-- name: MarkScheduleSent :exec
+UPDATE schedule SET sent_at = CURRENT_TIMESTAMP, sent_message_id = ? WHERE post_id = ?
+`
+
+type MarkScheduleSentParams struct {
+	SentMessageID sql.NullInt64 `json:"sent_message_id"`
+	PostID        int64         `json:"post_id"`
+}
+
+func (q *Queries) MarkScheduleSent(ctx context.Context, arg MarkScheduleSentParams) error {
+	_, err := q.db.ExecContext(ctx, markScheduleSent, arg.SentMessageID, arg.PostID)
 	return err
 }

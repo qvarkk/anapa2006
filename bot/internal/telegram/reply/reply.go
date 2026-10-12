@@ -13,7 +13,9 @@ import (
 	"qq/anapa2006/internal/telegram/access"
 	"qq/anapa2006/internal/telegram/channels"
 	"qq/anapa2006/internal/telegram/def"
+	"qq/anapa2006/internal/telegram/drafts"
 	"qq/anapa2006/internal/telegram/extract"
+	"qq/anapa2006/internal/telegram/targets"
 	"strings"
 	"time"
 
@@ -37,8 +39,8 @@ func IsReplyOrForward(update *models.Update) bool {
 }
 
 // HandlePendingReply is the single entry point for answers to bot prompts:
-// draft text, custom schedule, channel handle and user reference.
-func HandlePendingReply(st *store.Store, channelID int64) bot.HandlerFunc {
+// draft text, custom schedule, channel/target handles and user references.
+func HandlePendingReply(st *store.Store) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		// A forwarded message can supply the user id an add-user prompt asked for.
 		// This is checked first, because a forward can also be a reply.
@@ -79,13 +81,25 @@ func HandlePendingReply(st *store.Store, channelID int64) bot.HandlerFunc {
 			handleTextReply(ctx, b, st, pending, update, chatID, promptID, lang)
 
 		case domain.PendingActionAwaitingSchedule:
-			handleScheduleReply(ctx, b, st, channelID, pending, update, chatID, promptID, lang)
+			handleScheduleReply(ctx, b, st, pending, update, chatID, promptID, lang)
 
 		case domain.PendingActionAwaitingChannelHandle:
 			channels.HandleInput(ctx, b, st, pending, update)
 
+		case domain.PendingActionAwaitingTargetHandle:
+			targets.HandleInput(ctx, b, st, pending, update)
+
 		case domain.PendingActionAwaitingUserRef:
 			access.HandleInput(ctx, b, st, pending, update)
+
+		case domain.PendingActionAwaitingMediaAddPosition:
+			drafts.HandleMediaAddPosition(ctx, b, st, pending, update)
+
+		case domain.PendingActionAwaitingMediaAdd:
+			drafts.HandleMediaAdd(ctx, b, st, pending, update)
+
+		case domain.PendingActionAwaitingMediaSubstitute:
+			drafts.HandleMediaSubstitute(ctx, b, st, pending, update)
 		}
 	}
 }
@@ -157,7 +171,6 @@ func handleScheduleReply(
 	ctx context.Context,
 	b *bot.Bot,
 	st *store.Store,
-	channelID int64,
 	pending db.PendingReply,
 	update *models.Update,
 	chatID int64,
@@ -192,7 +205,7 @@ func handleScheduleReply(
 	}
 
 	if err := st.CreateSchedule(ctx, db.CreateScheduleParams{
-		PostID: postID, TargetChatID: channelID,
+		PostID: postID,
 		// The driver stores timestamps with their own offset, and the scheduler
 		// compares them as text against time.Now(), so keep this in the process
 		// timezone like every other scheduled_at value.

@@ -13,7 +13,9 @@ type Config struct {
 
 	TelegramBotToken string `required:"true" envconfig:"TELEGRAM_BOT_TOKEN"`
 
-	TelegramChannelChatID      int64 `required:"true" envconfig:"TELEGRAM_CHANNEL_CHAT_ID"`
+	// Optional: seeded as the first target channel when target_channels is
+	// empty. Target channels are otherwise managed from the bot UI.
+	TelegramChannelChatID      int64 `envconfig:"TELEGRAM_CHANNEL_CHAT_ID"`
 	TelegramCacheChannelChatID int64 `required:"true" envconfig:"TELEGRAM_CACHE_CHANNEL_CHAT_ID"`
 
 	// Owner of the bot. Has full access and is the only one who may manage

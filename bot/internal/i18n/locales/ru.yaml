@@ -49,6 +49,7 @@ simple:
   btn_post_hide: "⛈️ Скрыть"
   btn_post_delete: "🗑️ Удалить"
   btn_post_archive: "📦 Архивировать"
+  btn_post_unarchive: "📤 Разархивировать"
   #
   list_fetched_menu_title: |
     ✨ В этом разделе можно посмотреть посты, которые были загружены из источников
@@ -160,8 +161,18 @@ simple:
     %[3]s
   channel_status_active: "✅ Активен"
   channel_status_off: "⛔️ Отключён"
+  channel_stats: "📥 Загружено: %[1]d · 👾 Ошибок: %[2]d · 📨 Отправлено: %[3]d"
+  channel_detail: |
+    📡 <b>@%[1]s</b>
+    %[2]s
+
+    📥 Загружено: %[3]d
+    👾 Ошибок: %[4]d
+    📨 Отправлено: %[5]d
   btn_channels_list: "📋 Список каналов"
   btn_channel_add: "➕ Добавить канал"
+  btn_channel_enable: "✅ Включить"
+  btn_channel_disable: "⛔️ Отключить"
   channel_add_prompt: |
     📡 Отправьте handle канала (без @).
 
@@ -198,20 +209,148 @@ simple:
   btn_access_list: "📋 Список пользователей"
   btn_user_add: "➕ Добавить пользователя"
   user_add_prompt: |
-    👤 Отправьте @username пользователя (без @) — попробую определить его ID.
-  user_add_placeholder: "@username или ID"
+    👤 Отправьте числовой ID пользователя (например, 123456789) или перешлите любое сообщение от него.
+  user_add_placeholder: "числовой ID или пересланное сообщение"
   user_add_invalid: |
-    ❓ Не удалось распознать ни @username, ни числовой ID.
+    ❓ Не удалось распознать числовой ID.
 
     Ответьте на сообщение с запросом ещё раз — или вернитесь назад.
   user_add_need_id: |
-    ❓ Telegram не сообщает ботам ID по @username.
+    ❓ Telegram не сообщает ID этого отправителя.
 
-    Пришлите числовой ID (например, 123456789) или перешлите любое сообщение от этого пользователя. Можно также вернуться назад.
+    Пришлите числовой ID (например, 123456789) или перешлите сообщение от пользователя. Можно также вернуться назад.
+  user_add_not_user: |
+    ❓ Это канал или группа, а не пользователь.
+
+    Пришлите числовой ID или перешлите сообщение от пользователя.
   user_add_duplicate: "ℹ️ У этого пользователя уже есть доступ."
   user_add_success: "✅ Доступ выдан: %s"
   user_delete_prompt: "🗑 Удалить доступ для %s?"
   user_delete_owner_forbidden: "⛔ Владельца нельзя удалить."
+  #
+  targets_menu: |
+    🎯 Целевые каналы
+
+    Здесь можно добавлять и удалять каналы, в которые публикуются посты.
+  targets_list_header: "🎯 Целевые каналы (всего %d):"
+  targets_list_entry: |
+    🫆 <b>ID:</b> %[1]d
+    🎯 %[2]s
+    🔢 Chat ID: %[3]d
+  btn_targets_list: "📋 Список целевых каналов"
+  btn_targets_menu: "🎯 Целевые каналы"
+  btn_target_add: "➕ Добавить канал"
+  btn_target_delete: "🗑️ Удалить %s"
+  target_add_prompt: |
+    🎯 Отправьте handle канала (без @), в который бот будет публиковать посты.
+
+    Например: mychannel
+  target_add_placeholder: "handle канала"
+  target_add_invalid: |
+    ❓ Такой handle не подходит.
+
+    Нужны латинские буквы, цифры или _, от 5 до 32 символов. Ответьте на сообщение с запросом ещё раз — или вернитесь назад.
+  target_add_not_found: |
+    ❓ Канал @%s не найден в Telegram.
+
+    Проверьте handle и ответьте на сообщение с запросом ещё раз — или вернитесь назад.
+  target_add_not_channel: |
+    ❓ @%s — это не публичный канал.
+
+    Укажите handle публичного канала или вернитесь назад.
+  target_add_duplicate: "ℹ️ Канал @%s уже добавлен."
+  target_add_inconclusive: |
+    ❓ Не удалось проверить канал @%s.
+
+    Попробуйте ещё раз — или вернитесь назад.
+  target_add_success: "✅ Канал @%s добавлен как целевой."
+  target_add_no_admin: |
+    ⚠️ Канал @%s добавлен, но бот не является его администратором.
+
+    Публикации будут падать, пока вы не добавите бота в администраторы канала.
+  target_delete_prompt: "🗑 Удалить целевой канал %s?\n\nВсе его расписания будут удалены."
+  #
+  drafts_list_active_header: "📝 Запланированные и черновики (всего %d):"
+  drafts_list_posted_header: "📨 Отправленные (всего %d):"
+  drafts_list_failed_header: "⚠️ Ошибки (всего %d):"
+  draft_list_posted_entry: |
+    🫆 <b>ID:</b> %[1]d
+    🕓 Отправлен: %[2]s
+    🔗 %[3]s
+    💬 %[4]s
+    🖼️ %[5]s
+  draft_list_failed_entry: |
+    🫆 <b>ID:</b> %[1]d
+    ⚠️ %[2]s
+    💬 %[3]s
+    🖼️ %[4]s
+  draft_error_unknown: "Неизвестная ошибка отправки"
+  btn_drafts_active: "📝 Запланированные и черновики"
+  btn_drafts_posted: "📨 Отправленные"
+  btn_drafts_failed: "⚠️ Ошибки"
+  #
+  draft_detail_active: |
+    📝 <b>Черновик</b> 🫆 ID: %[1]d
+    🎯 Канал: %[2]s
+    🗓️ Время: %[3]s
+    %[4]s
+
+    💬 %[5]s
+    🖼️ Вложения: %[6]s
+  draft_detail_posted: |
+    📨 <b>Отправлено</b> 🫆 ID: %[1]d
+    🕓 Время: %[2]s
+    🔗 %[3]s
+
+    💬 %[4]s
+    🖼️ Вложения: %[5]s
+  draft_detail_failed: |
+    ⚠️ <b>Ошибка отправки</b> 🫆 ID: %[1]d
+    Ошибка: %[2]s
+    🎯 Канал: %[3]s
+    🗓️ Время: %[4]s
+
+    💬 %[5]s
+    🖼️ Вложения: %[6]s
+  draft_target_warning: "⚠️ Сообщение запланировано, но канал назначения не выбран."
+  btn_draft_target: "🎯 Канал: %s"
+  btn_draft_select_target: "🎯 Выбрать канал"
+  target_not_selected: "не выбран"
+  btn_open_posted: "🔗 Открыть опубликованное сообщение"
+  draft_need_target: |
+    ⚠️ Сначала выберите канал назначения.
+
+    Без него запланировать публикацию нельзя.
+  draft_target_prompt: "🎯 Выберите канал назначения:"
+  btn_draft_target_clear: "❌ Снять выбор канала"
+  #
+  draft_media_menu: "🖼️ Вложения (%d):"
+  draft_media_entry: "№%d · %s"
+  draft_media_detail: "🖼️ Вложение: %s"
+  btn_draft_media_item: "№%d · %s"
+  btn_media_add: "➕ Добавить"
+  btn_media_substitute: "🔄 Заменить"
+  btn_media_delete: "🗑️ Удалить"
+  btn_media_back: "🖼️ К вложениям"
+  media_substitute_prompt: |
+    📎 Отправьте новое вложение (фото/видео/документ).
+
+    Оно заменит текущее.
+  media_placeholder: "фото/видео/документ"
+  media_add_position_prompt: |
+    🔢 Введите позицию для нового вложения (0 — в начало).
+  media_add_position_placeholder: "номер позиции"
+  media_add_invalid_position: |
+    ❓ Не удалось распознать позицию.
+
+    Введите число от 0 и больше, ответив на сообщение с запросом.
+  media_add_prompt: |
+    📎 Отправьте новое вложение (фото/видео/документ).
+  media_limit_reached: "⛔️ Нельзя добавить больше 10 вложений."
+  media_unsupported: |
+    ❓ Поддерживаются только фото, видео и документы.
+
+    Отправьте подходящее вложение.
 
 plural:
   channel_new_count:

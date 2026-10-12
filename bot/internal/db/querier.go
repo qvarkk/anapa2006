@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -15,28 +16,37 @@ type Querier interface {
 	CheckDraftScheduled(ctx context.Context, postID int64) (bool, error)
 	CheckPostDraftExists(ctx context.Context, postID int64) (bool, error)
 	ClaimScheduledPost(ctx context.Context, id int64) (Post, error)
+	CountActiveDrafts(ctx context.Context) (int64, error)
 	CountAllPostsBySource(ctx context.Context, sourceID int64) (int64, error)
 	CountAllowedUsers(ctx context.Context) (int64, error)
-	CountDrafts(ctx context.Context) (int64, error)
+	CountDraftMedia(ctx context.Context, draftID int64) (int64, error)
+	CountFailedDrafts(ctx context.Context) (int64, error)
 	CountMediaKindsByDraft(ctx context.Context, draftID int64) ([]CountMediaKindsByDraftRow, error)
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
+	CountPostedDrafts(ctx context.Context) (int64, error)
 	CountPosts(ctx context.Context) (int64, error)
 	CountPostsBySource(ctx context.Context, sourceID int64) (int64, error)
 	CountSources(ctx context.Context) (int64, error)
+	CountTargetChannels(ctx context.Context) (int64, error)
 	CreateDraftMedia(ctx context.Context, arg CreateDraftMediaParams) error
 	CreatePendingReply(ctx context.Context, arg CreatePendingReplyParams) error
 	CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) error
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
+	CreateTargetChannel(ctx context.Context, arg CreateTargetChannelParams) (TargetChannel, error)
 	DeleteAllowedUser(ctx context.Context, userID int64) error
 	DeleteDraft(ctx context.Context, postID int64) error
+	DeleteDraftMediaByDraft(ctx context.Context, draftID int64) error
+	DeleteDraftMediaByID(ctx context.Context, id int64) error
 	DeletePendingReply(ctx context.Context, arg DeletePendingReplyParams) error
 	DeletePost(ctx context.Context, id int64) error
 	DeletePostMedia(ctx context.Context, postID int64) error
 	DeleteSource(ctx context.Context, id int64) error
+	DeleteTargetChannel(ctx context.Context, id int64) error
 	Deschedule(ctx context.Context, postID int64) error
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
+	GetDraftMediaByID(ctx context.Context, id int64) (DraftMedium, error)
 	GetLatestPendingReplyByAction(ctx context.Context, arg GetLatestPendingReplyByActionParams) (PendingReply, error)
 	GetPendingReply(ctx context.Context, arg GetPendingReplyParams) (PendingReply, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
@@ -46,17 +56,26 @@ type Querier interface {
 	GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error)
 	GetSourceByHandle(ctx context.Context, channelHandle string) (Source, error)
 	GetSourceByID(ctx context.Context, id int64) (Source, error)
+	GetSourceStats(ctx context.Context, sourceID int64) (GetSourceStatsRow, error)
+	GetTargetChannelByChatID(ctx context.Context, chatID int64) (TargetChannel, error)
+	GetTargetChannelByHandle(ctx context.Context, handle sql.NullString) (TargetChannel, error)
+	GetTargetChannelByID(ctx context.Context, id int64) (TargetChannel, error)
 	HidePost(ctx context.Context, id int64) error
 	IncrementRetryCount(ctx context.Context, id int64) error
+	ListActiveDrafts(ctx context.Context, arg ListActiveDraftsParams) ([]ListActiveDraftsRow, error)
 	ListAllowedUsers(ctx context.Context, arg ListAllowedUsersParams) ([]AllowedUser, error)
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
-	ListDraftsLatest(ctx context.Context, arg ListDraftsLatestParams) ([]ListDraftsLatestRow, error)
-	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
+	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]ListDuePendingRow, error)
+	ListFailedDrafts(ctx context.Context, arg ListFailedDraftsParams) ([]ListFailedDraftsRow, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
+	ListPostedDrafts(ctx context.Context, arg ListPostedDraftsParams) ([]ListPostedDraftsRow, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
+	ListScheduledDraftsByTarget(ctx context.Context, targetChannelID sql.NullInt64) ([]int64, error)
 	ListSources(ctx context.Context, arg ListSourcesParams) ([]Source, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
+	ListSourcesWithStats(ctx context.Context, arg ListSourcesWithStatsParams) ([]ListSourcesWithStatsRow, error)
+	ListTargetChannels(ctx context.Context, arg ListTargetChannelsParams) ([]TargetChannel, error)
 	ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error)
 	MarkPostArchived(ctx context.Context, id int64) error
 	MarkPostFailed(ctx context.Context, id int64) error
@@ -64,12 +83,15 @@ type Querier interface {
 	MarkPostSendError(ctx context.Context, id int64) error
 	MarkPostSending(ctx context.Context, id int64) error
 	MarkPostSent(ctx context.Context, id int64) error
-	MarkScheduleSent(ctx context.Context, postID int64) error
+	MarkScheduleSendError(ctx context.Context, arg MarkScheduleSendErrorParams) error
+	MarkScheduleSent(ctx context.Context, arg MarkScheduleSentParams) error
 	MarkStaleSending(ctx context.Context, scheduledAt time.Time) error
 	ResetPostToNew(ctx context.Context, id int64) error
+	SetDraftTargetChannel(ctx context.Context, arg SetDraftTargetChannelParams) error
 	SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error
 	ToggleSourceActive(ctx context.Context, id int64) error
 	UnhidePost(ctx context.Context, id int64) error
+	UpdateDraftMedia(ctx context.Context, arg UpdateDraftMediaParams) error
 	UpdatePostDraftText(ctx context.Context, arg UpdatePostDraftTextParams) error
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
 }

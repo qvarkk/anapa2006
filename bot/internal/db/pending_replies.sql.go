@@ -11,8 +11,8 @@ import (
 )
 
 const createPendingReply = `-- name: CreatePendingReply :exec
-INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, origin)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, media_id, position, origin)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreatePendingReplyParams struct {
@@ -20,6 +20,8 @@ type CreatePendingReplyParams struct {
 	PromptMessageID int64         `json:"prompt_message_id"`
 	Action          string        `json:"action"`
 	PostID          sql.NullInt64 `json:"post_id"`
+	MediaID         sql.NullInt64 `json:"media_id"`
+	Position        sql.NullInt64 `json:"position"`
 	Origin          string        `json:"origin"`
 }
 
@@ -29,6 +31,8 @@ func (q *Queries) CreatePendingReply(ctx context.Context, arg CreatePendingReply
 		arg.PromptMessageID,
 		arg.Action,
 		arg.PostID,
+		arg.MediaID,
+		arg.Position,
 		arg.Origin,
 	)
 	return err
@@ -49,7 +53,7 @@ func (q *Queries) DeletePendingReply(ctx context.Context, arg DeletePendingReply
 }
 
 const getLatestPendingReplyByAction = `-- name: GetLatestPendingReplyByAction :one
-SELECT chat_id, prompt_message_id, "action", post_id, origin, created_at FROM pending_replies
+SELECT chat_id, prompt_message_id, "action", post_id, media_id, position, origin, created_at FROM pending_replies
 WHERE chat_id = ? AND action = ?
 ORDER BY created_at DESC
 LIMIT 1
@@ -68,6 +72,8 @@ func (q *Queries) GetLatestPendingReplyByAction(ctx context.Context, arg GetLate
 		&i.PromptMessageID,
 		&i.Action,
 		&i.PostID,
+		&i.MediaID,
+		&i.Position,
 		&i.Origin,
 		&i.CreatedAt,
 	)
@@ -75,7 +81,7 @@ func (q *Queries) GetLatestPendingReplyByAction(ctx context.Context, arg GetLate
 }
 
 const getPendingReply = `-- name: GetPendingReply :one
-SELECT chat_id, prompt_message_id, "action", post_id, origin, created_at FROM pending_replies WHERE chat_id = ? AND prompt_message_id = ?
+SELECT chat_id, prompt_message_id, "action", post_id, media_id, position, origin, created_at FROM pending_replies WHERE chat_id = ? AND prompt_message_id = ?
 `
 
 type GetPendingReplyParams struct {
@@ -91,6 +97,8 @@ func (q *Queries) GetPendingReply(ctx context.Context, arg GetPendingReplyParams
 		&i.PromptMessageID,
 		&i.Action,
 		&i.PostID,
+		&i.MediaID,
+		&i.Position,
 		&i.Origin,
 		&i.CreatedAt,
 	)

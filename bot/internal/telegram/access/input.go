@@ -23,38 +23,22 @@ type userRefKind int
 const (
 	refInvalid userRefKind = iota
 	refID
-	refUsername
 )
 
-// ParseUserRef reads either a numeric Telegram ID or an @username (the @ is
-// optional).
-func ParseUserRef(input string) (kind userRefKind, id int64, username string) {
+// ParseUserRef reads a numeric Telegram ID. Adding by @username was removed:
+// Telegram does not disclose a user ID from a username, so that path failed
+// every time. Only a numeric ID (or a forwarded message) identifies a user.
+func ParseUserRef(input string) (kind userRefKind, id int64) {
 	s := strings.TrimSpace(input)
 	if s == "" {
-		return refInvalid, 0, ""
+		return refInvalid, 0
 	}
 
-	if strings.HasPrefix(s, "@") {
-		name := domain.NormalizeUsername(s)
-		if domain.ValidUsername(name) {
-			return refUsername, 0, name
-		}
-		return refInvalid, 0, ""
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil && n > 0 {
+		return refID, n
 	}
 
-	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
-		if n <= 0 {
-			return refInvalid, 0, ""
-		}
-		return refID, n, ""
-	}
-
-	name := domain.NormalizeUsername(s)
-	if domain.ValidUsername(name) {
-		return refUsername, 0, name
-	}
-
-	return refInvalid, 0, ""
+	return refInvalid, 0
 }
 
 // HandleInput turns the answer to the "add user" prompt into an allowed user.
@@ -73,56 +57,34 @@ func HandleInput(
 	chatID := update.Message.Chat.ID
 	promptID := pending.PromptMessageID
 
-	kind, id, handle := ParseUserRef(update.Message.Text)
-	switch kind {
-	case refID:
-		// getChat only knows users the bot has met; enrich when possible.
-		username := ""
-		if chat, err := b.GetChat(ctx, &bot.GetChatParams{ChatID: id}); err == nil {
-			username = chat.Username
-		}
-		addUser(ctx, b, st, lang, chatID, promptID, pending.Origin, id, username)
-
-	case refUsername:
-		chat, err := b.GetChat(ctx, &bot.GetChatParams{ChatID: "@" + handle})
-		if err != nil || chat.Type != models.ChatTypePrivate {
-			// Telegram does not disclose user IDs by username, so ask for an
-			// ID or a forwarded message instead.
-			sendNotice(ctx, b, lang, chatID, pending.Origin, i18n.UserAddNeedID)
-			return
-		}
-
-		username := chat.Username
-		if username == "" {
-			username = handle
-		}
-		addUser(ctx, b, st, lang, chatID, promptID, pending.Origin, chat.ID, username)
-
-	default:
+	kind, id := ParseUserRef(update.Message.Text)
+	if kind != refID {
 		sendNotice(ctx, b, lang, chatID, pending.Origin, i18n.UserAddInvalid)
+		return
 	}
+
+	// getChat only knows users the bot has met; enrich when possible.
+	username := ""
+	if chat, err := b.GetChat(ctx, &bot.GetChatParams{ChatID: id}); err == nil {
+		username = chat.Username
+	}
+	addUser(ctx, b, st, lang, chatID, promptID, pending.Origin, id, username)
 }
 
-// HandleForward captures the sender of a forwarded message as the user to add,
-// when an add-user prompt is pending in this chat. It reports whether the
-// update was consumed.
+// HandleForward answers an add-user prompt from a forwarded message. It reports
+// whether the update was consumed. Telegram does not allow a forwarded message
+// to also be a reply, so a forward is only routed here when an add-user prompt
+// is pending. Once that prompt exists the forward is always consumed — even when
+// the sender ID cannot be resolved — so it never falls through to the "unknown
+// message" handler.
 func HandleForward(
 	ctx context.Context,
 	b *bot.Bot,
 	st *store.Store,
 	update *models.Update,
 ) bool {
-	forward := update.Message.ForwardOrigin
-	if forward == nil || forward.MessageOriginUser == nil {
-		return false
-	}
-
-	sender := forward.MessageOriginUser.SenderUser
-	if sender.ID == 0 {
-		return false
-	}
-
 	chatID := update.Message.Chat.ID
+
 	pending, err := st.GetLatestPendingReplyByAction(ctx, db.GetLatestPendingReplyByActionParams{
 		ChatID: chatID, Action: domain.PendingActionAwaitingUserRef,
 	})
@@ -139,17 +101,35 @@ func HandleForward(
 		return false
 	}
 
+	// A prompt is pending, so this forward belongs to the add-user flow.
 	if !extract.IsOwner(ctx) {
 		return true
 	}
 
 	lang := extract.Lang(ctx)
-	slog.LogAttrs(
-		ctx, slog.LevelInfo,
-		"adding allowed user from a forwarded message",
-		slog.Int64("user_id", sender.ID),
-	)
-	addUser(ctx, b, st, lang, chatID, pending.PromptMessageID, pending.Origin, sender.ID, sender.Username)
+	forward := update.Message.ForwardOrigin
+
+	switch {
+	case forward != nil && forward.MessageOriginUser != nil:
+		sender := forward.MessageOriginUser.SenderUser
+		if sender.ID == 0 {
+			sendNotice(ctx, b, lang, chatID, pending.Origin, i18n.UserAddNeedID)
+			break
+		}
+		slog.LogAttrs(
+			ctx, slog.LevelInfo,
+			"adding allowed user from a forwarded message",
+			slog.Int64("user_id", sender.ID),
+		)
+		addUser(ctx, b, st, lang, chatID, pending.PromptMessageID, pending.Origin, sender.ID, sender.Username)
+
+	case forward != nil && (forward.MessageOriginChannel != nil || forward.MessageOriginChat != nil):
+		sendNotice(ctx, b, lang, chatID, pending.Origin, i18n.UserAddNotUser)
+
+	default:
+		// Hidden user (privacy), or any origin that discloses no usable ID.
+		sendNotice(ctx, b, lang, chatID, pending.Origin, i18n.UserAddNeedID)
+	}
 
 	return true
 }

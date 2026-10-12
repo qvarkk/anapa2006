@@ -16,6 +16,7 @@ func startMenuKeyboard(lang i18n.Lang, owner bool) *models.InlineKeyboardMarkup 
 		{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: callback.Fetched}},
 		{{Text: i18n.T(lang, i18n.BtnDraftsMenu), CallbackData: callback.DraftsMenu}},
 		{{Text: i18n.T(lang, i18n.BtnManageChannels), CallbackData: callback.ChannelsMenu}},
+		{{Text: i18n.T(lang, i18n.BtnTargetsMenu), CallbackData: callback.TargetsMenu}},
 	}
 
 	// Only the owner may manage access; the handlers check this as well.

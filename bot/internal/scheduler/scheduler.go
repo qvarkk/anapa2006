@@ -8,6 +8,8 @@ import (
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/store"
 	"time"
+
+	"github.com/go-telegram/bot/models"
 )
 
 const (
@@ -18,28 +20,19 @@ const (
 )
 
 type Sender interface {
-	SendMessage(ctx context.Context, chatID int64, text string) error
-	SendMediaWithCaption(ctx context.Context, chatID int64, media []db.DraftMedium, caption string) error
+	SendMessage(ctx context.Context, chatID int64, text string) (*models.Message, error)
+	SendMediaWithCaption(ctx context.Context, chatID int64, media []db.DraftMedium, caption string) (*models.Message, error)
 }
-
-type AfterPostCallbackFn func(ctx context.Context, schedule db.Schedule)
 
 type Scheduler struct {
 	store  *store.Store
 	sender Sender
-
-	onAfterPost AfterPostCallbackFn
 }
 
-func NewScheduler(
-	store *store.Store,
-	sender Sender,
-	onAfterPost AfterPostCallbackFn,
-) *Scheduler {
+func NewScheduler(store *store.Store, sender Sender) *Scheduler {
 	return &Scheduler{
-		store:       store,
-		sender:      sender,
-		onAfterPost: onAfterPost,
+		store:  store,
+		sender: sender,
 	}
 }
 
@@ -86,7 +79,7 @@ func (s *Scheduler) Tick(ctx context.Context) {
 	}
 }
 
-func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
+func (s *Scheduler) publish(ctx context.Context, sched db.ListDuePendingRow) {
 	claimed, err := s.store.ClaimScheduledPost(ctx, sched.PostID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return
@@ -95,17 +88,6 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		slog.LogAttrs(
 			ctx, slog.LevelError,
 			"claim schedule",
-			slog.Int64("post_id", sched.PostID),
-			slog.String("error", err.Error()),
-		)
-		return
-	}
-
-	schedule, err := s.store.GetPostScheduleByID(ctx, claimed.ID)
-	if err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelError,
-			"get post schedule",
 			slog.Int64("post_id", sched.PostID),
 			slog.String("error", err.Error()),
 		)
@@ -134,11 +116,12 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		return
 	}
 
+	var sent *models.Message
 	var sendErr error
 	if len(media) == 0 {
-		sendErr = s.sender.SendMessage(ctx, schedule.TargetChatID, draft.FinalText)
+		sent, sendErr = s.sender.SendMessage(ctx, sched.ChatID, draft.FinalText)
 	} else {
-		sendErr = s.sender.SendMediaWithCaption(ctx, schedule.TargetChatID, media, draft.FinalText)
+		sent, sendErr = s.sender.SendMediaWithCaption(ctx, sched.ChatID, media, draft.FinalText)
 	}
 
 	if sendErr != nil {
@@ -157,10 +140,27 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 				slog.String("error", err.Error()),
 			)
 		}
+		if err := s.store.MarkScheduleSendError(ctx, db.MarkScheduleSendErrorParams{
+			PostID:    claimed.ID,
+			LastError: sql.NullString{String: sendErr.Error(), Valid: true},
+		}); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"mark schedule send error",
+				slog.Int64("post_id", claimed.ID),
+				slog.String("error", err.Error()),
+			)
+		}
 		return
 	}
 
-	if err := s.store.MarkScheduleSent(ctx, claimed.ID); err != nil {
+	var messageID sql.NullInt64
+	if sent != nil {
+		messageID = sql.NullInt64{Int64: int64(sent.ID), Valid: true}
+	}
+	if err := s.store.MarkScheduleSent(ctx, db.MarkScheduleSentParams{
+		PostID: claimed.ID, SentMessageID: messageID,
+	}); err != nil {
 		slog.LogAttrs(
 			ctx, slog.LevelWarn,
 			"mark schedule sent",
@@ -178,14 +178,10 @@ func (s *Scheduler) publish(ctx context.Context, sched db.Schedule) {
 		)
 	}
 
-	if s.onAfterPost != nil {
-		s.onAfterPost(ctx, schedule)
-	}
-
 	slog.LogAttrs(
 		ctx, slog.LevelInfo,
 		"published scheduled post",
 		slog.Int64("post_id", draft.PostID),
-		slog.Int64("chat_id", sched.TargetChatID),
+		slog.Int64("chat_id", sched.ChatID),
 	)
 }

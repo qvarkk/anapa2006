@@ -1,6 +1,6 @@
 -- name: CreatePendingReply :exec
-INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, origin)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO pending_replies (chat_id, prompt_message_id, action, post_id, media_id, position, origin)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 -- name: GetPendingReply :one
 SELECT * FROM pending_replies WHERE chat_id = ? AND prompt_message_id = ?;

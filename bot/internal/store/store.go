@@ -23,31 +23,38 @@ type Store struct {
 }
 
 func Open(path string) (*Store, error) {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("store: resolve path %s: %w", path, err)
-	}
+	// ":memory:" is a special SQLite name; resolving it through filepath.Abs
+	// would turn it into a regular file named ":memory:" in the working
+	// directory, so keep it verbatim.
+	dsn := path
+	if path != ":memory:" {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, fmt.Errorf("store: resolve path %s: %w", path, err)
+		}
 
-	if err := os.MkdirAll(filepath.Dir(absPath), 0o755); err != nil {
-		return nil, fmt.Errorf("store: create db directory: %w", err)
+		if err := os.MkdirAll(filepath.Dir(absPath), 0o755); err != nil {
+			return nil, fmt.Errorf("store: create db directory: %w", err)
+		}
+		dsn = absPath
 	}
 
 	slog.LogAttrs(
 		context.Background(),
 		slog.LevelInfo,
 		"opening database...",
-		slog.String("path", absPath),
+		slog.String("path", dsn),
 	)
 
-	conn, err := sql.Open("sqlite3", absPath+"?_foreign_keys=on")
+	conn, err := sql.Open("sqlite3", dsn+"?_foreign_keys=on")
 	if err != nil {
-		return nil, fmt.Errorf("store: open %s: %w", absPath, err)
+		return nil, fmt.Errorf("store: open %s: %w", dsn, err)
 	}
 
 	conn.SetMaxOpenConns(1)
 
 	if err := conn.Ping(); err != nil {
-		return nil, fmt.Errorf("store: ping %s: %w", absPath, err)
+		return nil, fmt.Errorf("store: ping %s: %w", dsn, err)
 	}
 	if _, err := conn.Exec(schemaSQL); err != nil {
 		return nil, fmt.Errorf("store: apply schema: %w", err)
@@ -75,7 +82,12 @@ func verifySchema(conn *sql.DB) error {
 		present bool // whether the marker must appear in the stored DDL
 	}{
 		{"pending_replies", "awaiting_channel_handle", true},
+		{"pending_replies", "awaiting_media_add", true},
 		{"post_drafts", "user_id", false},
+		{"post_drafts", "target_channel_id", true},
+		{"schedule", "target_chat_id", false},
+		{"schedule", "sent_message_id", true},
+		{"target_channels", "chat_id", true},
 	}
 
 	for _, c := range checks {

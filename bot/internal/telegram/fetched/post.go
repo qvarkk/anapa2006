@@ -115,8 +115,8 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			{postVisibilityButton},
 			{
 				{
-					Text:         i18n.T(lang, i18n.BtnPostArchive),
-					CallbackData: callback.Format(callback.PostArchive, postID, callbackData),
+					Text:         archiveButtonText(lang, post.Status),
+					CallbackData: archiveButtonCallback(postID, callbackData, post.Status),
 				},
 			},
 			{
@@ -151,4 +151,18 @@ func HandlePostDetail(st *store.Store) bot.HandlerFunc {
 			)
 		}
 	}
+}
+
+func archiveButtonText(lang i18n.Lang, status string) string {
+	if status == "archived" {
+		return i18n.T(lang, i18n.BtnPostUnarchive)
+	}
+	return i18n.T(lang, i18n.BtnPostArchive)
+}
+
+func archiveButtonCallback(postID int64, origin, status string) string {
+	if status == "archived" {
+		return callback.Format(callback.PostUnarchive, postID, origin)
+	}
+	return callback.Format(callback.PostArchive, postID, origin)
 }

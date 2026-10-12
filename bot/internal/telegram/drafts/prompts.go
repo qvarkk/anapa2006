@@ -32,23 +32,14 @@ func HandleEditTextPrompt(st *store.Store) bot.HandlerFunc {
 
 		data, origin, err := extract.BackNavigation(update, 4, 1)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"parse back navagation",
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "parse back navagation", slog.String("error", err.Error()))
 			return
 		}
 		postID := data[0]
 
 		draft, err := st.GetPostDraftByID(ctx, postID)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"get draft by id",
-				slog.Int64("post_id", postID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "get draft by id", slog.Int64("post_id", postID), slog.String("error", err.Error()))
 			return
 		}
 
@@ -66,12 +57,7 @@ func HandleEditTextPrompt(st *store.Store) bot.HandlerFunc {
 			},
 		})
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"send edit prompt",
-				slog.Int64("draft_id", draft.PostID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "send edit prompt", slog.Int64("draft_id", draft.PostID), slog.String("error", err.Error()))
 			return
 		}
 
@@ -82,12 +68,7 @@ func HandleEditTextPrompt(st *store.Store) bot.HandlerFunc {
 			PostID:          sql.NullInt64{Int64: draft.PostID, Valid: true},
 			Origin:          origin,
 		}); err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"create pending reply",
-				slog.Int64("draft_id", draft.PostID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "create pending reply", slog.Int64("draft_id", draft.PostID), slog.String("error", err.Error()))
 		}
 	}
 }
@@ -101,23 +82,14 @@ func HandleCustomSchedulePrompt(st *store.Store) bot.HandlerFunc {
 
 		data, origin, err := extract.BackNavigation(update, 3, 1)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"parse back navagation",
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "parse back navagation", slog.String("error", err.Error()))
 			return
 		}
 		postID := data[0]
 
 		draft, err := st.GetPostDraftByID(ctx, postID)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"get draft by id",
-				slog.Int64("post_id", postID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "get draft by id", slog.Int64("post_id", postID), slog.String("error", err.Error()))
 			return
 		}
 
@@ -135,12 +107,7 @@ func HandleCustomSchedulePrompt(st *store.Store) bot.HandlerFunc {
 			},
 		})
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"send custom schedule prompt",
-				slog.Int64("draft_id", draft.PostID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "send custom schedule prompt", slog.Int64("draft_id", draft.PostID), slog.String("error", err.Error()))
 			return
 		}
 
@@ -151,12 +118,7 @@ func HandleCustomSchedulePrompt(st *store.Store) bot.HandlerFunc {
 			PostID:          sql.NullInt64{Int64: draft.PostID, Valid: true},
 			Origin:          origin,
 		}); err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"create pending reply",
-				slog.Int64("draft_id", draft.PostID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "create pending reply", slog.Int64("draft_id", draft.PostID), slog.String("error", err.Error()))
 		}
 	}
 }
@@ -167,23 +129,20 @@ func HandleQueuePrompt(st *store.Store) bot.HandlerFunc {
 
 		data, origin, err := extract.BackNavigation(update, 3, 1)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"parse back navagation",
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "parse back navagation", slog.String("error", err.Error()))
 			return
 		}
 		postID := data[0]
 
 		draft, err := st.GetPostDraftByID(ctx, postID)
 		if err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"get draft by id",
-				slog.Int64("post_id", postID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "get draft by id", slog.Int64("post_id", postID), slog.String("error", err.Error()))
+			return
+		}
+
+		// A target channel must be selected before scheduling.
+		if !draft.TargetChannelID.Valid {
+			showSelectTargetNotice(ctx, b, update, postID, origin)
 			return
 		}
 
@@ -197,12 +156,7 @@ func HandleQueuePrompt(st *store.Store) bot.HandlerFunc {
 			Text:        i18n.T(lang, i18n.PromptDraftQueue),
 			ReplyMarkup: kb,
 		}); err != nil {
-			slog.LogAttrs(
-				ctx, slog.LevelError,
-				"edit message to draft timing failed",
-				slog.Int64("post_id", draft.PostID),
-				slog.String("error", err.Error()),
-			)
+			slog.LogAttrs(ctx, slog.LevelError, "edit message to draft timing failed", slog.Int64("post_id", draft.PostID), slog.String("error", err.Error()))
 		}
 	}
 }
@@ -212,17 +166,13 @@ func HandleDequeuePrompt(ctx context.Context, b *bot.Bot, update *models.Update)
 
 	data, origin, err := extract.BackNavigation(update, 3, 1)
 	if err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelError,
-			"parse back navagation",
-			slog.String("error", err.Error()),
-		)
+		slog.LogAttrs(ctx, slog.LevelError, "parse back navagation", slog.String("error", err.Error()))
 		return
 	}
 	postID := data[0]
 
 	payload := genericPromptPayload{
-		MessageText:     i18n.T(lang, i18n.PromptDraftEditText),
+		MessageText:     i18n.T(lang, i18n.PromptDraftDequeue),
 		ProceedText:     i18n.T(lang, i18n.BtnPromptDraftDequeue),
 		ProceedCallback: callback.Format(callback.DraftDequeue, postID, origin),
 		ReturnText:      i18n.T(lang, i18n.BtnBack),
@@ -237,11 +187,7 @@ func HandleDeletePrompt(ctx context.Context, b *bot.Bot, update *models.Update) 
 
 	data, origin, err := extract.BackNavigation(update, 3, 1)
 	if err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelError,
-			"parse back navagation",
-			slog.String("error", err.Error()),
-		)
+		slog.LogAttrs(ctx, slog.LevelError, "parse back navagation", slog.String("error", err.Error()))
 		return
 	}
 	postID := data[0]
@@ -282,10 +228,6 @@ func handleGenericPrompt(ctx context.Context, b *bot.Bot, update *models.Update,
 			},
 		},
 	}); err != nil {
-		slog.LogAttrs(
-			ctx, slog.LevelError,
-			"edit message to drafts prompt failed",
-			slog.String("error", err.Error()),
-		)
+		slog.LogAttrs(ctx, slog.LevelError, "edit message to drafts prompt failed", slog.String("error", err.Error()))
 	}
 }

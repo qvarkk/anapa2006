@@ -33,6 +33,12 @@ func HandleArchive(st *store.Store) bot.HandlerFunc {
 	})
 }
 
+func HandleUnarchive(st *store.Store) bot.HandlerFunc {
+	return handlePostAction(func(ctx context.Context, postID int64) error {
+		return st.UnhidePost(ctx, postID)
+	})
+}
+
 func HandleDelete(st *store.Store) bot.HandlerFunc {
 	return handlePostAction(func(ctx context.Context, postID int64) error {
 		return st.WithTx(ctx, func(q *db.Queries) error {

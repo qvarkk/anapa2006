@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"qq/anapa2006/internal/config"
+	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/fetcher"
 	"qq/anapa2006/internal/logger"
 	"qq/anapa2006/internal/scheduler"
@@ -52,10 +54,19 @@ func main() {
 	}
 	defer st.Close()
 
+	if cfg.TelegramChannelChatID != 0 {
+		if err := seedDefaultTarget(ctx, st, cfg.TelegramChannelChatID); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelWarn,
+				"seed default target channel",
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+
 	tgCfg := telegram.Config{
-		Token:     cfg.TelegramBotToken,
-		ChannelID: cfg.TelegramChannelChatID,
-		OwnerID:   cfg.TelegramOwnerID,
+		Token:   cfg.TelegramBotToken,
+		OwnerID: cfg.TelegramOwnerID,
 	}
 
 	slog.LogAttrs(ctx, slog.LevelInfo, "starting bot...")
@@ -73,10 +84,30 @@ func main() {
 	go fetcher.Run(ctx, cfg.FetchInterval)
 
 	sender := sender.New(b)
-	scheduler := scheduler.NewScheduler(st, sender, nil)
+	scheduler := scheduler.NewScheduler(st, sender)
 	go scheduler.Run(ctx, cfg.PostInterval)
 
 	slog.LogAttrs(ctx, slog.LevelInfo, "bot started")
 	b.Start(ctx)
 	slog.LogAttrs(ctx, slog.LevelInfo, "bot stopped")
+}
+
+// seedDefaultTarget inserts the legacy TELEGRAM_CHANNEL_CHAT_ID as the first
+// target channel, so existing deployments keep working after the target moved
+// into the database. Users can then add/remove targets from the bot UI.
+func seedDefaultTarget(ctx context.Context, st *store.Store, chatID int64) error {
+	count, err := st.CountTargetChannels(ctx)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	_, err = st.CreateTargetChannel(ctx, db.CreateTargetChannelParams{
+		ChatID: chatID,
+		Handle: sql.NullString{},
+		Title:  "Канал по умолчанию",
+	})
+	return err
 }

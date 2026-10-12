@@ -21,7 +21,9 @@ func HandleDraftsMenu(ctx context.Context, b *bot.Bot, update *models.Update) {
 		MessageID: msgID, ChatID: chatID, Text: i18n.T(lang, i18n.DraftsMenu),
 		ReplyMarkup: models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{{Text: i18n.T(lang, i18n.BtnDraftsList), CallbackData: callback.Format(callback.DraftsList, 0)}},
+				{{Text: i18n.T(lang, i18n.BtnDraftsActive), CallbackData: callback.Format(callback.DraftsListActive, 0)}},
+				{{Text: i18n.T(lang, i18n.BtnDraftsPosted), CallbackData: callback.Format(callback.DraftsListPosted, 0)}},
+				{{Text: i18n.T(lang, i18n.BtnDraftsFailed), CallbackData: callback.Format(callback.DraftsListFailed, 0)}},
 				{{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Start}},
 			},
 		},

@@ -82,13 +82,10 @@ func renderList(
 		sb.WriteString(i18n.T(lang, i18n.AccessListEntry, user.UserID, usernameLabel(lang, user.Username), role))
 		sb.WriteString("\n\n")
 
-		// The owner is configured outside the bot and cannot be removed.
-		if user.UserID != ownerID {
-			rows = append(rows, []models.InlineKeyboardButton{{
-				Text:         i18n.T(lang, i18n.BtnDelete),
-				CallbackData: callback.Format(callback.AccessDeletePrompt, user.UserID, listCallback),
-			}})
-		}
+		rows = append(rows, []models.InlineKeyboardButton{{
+			Text:         fmt.Sprintf("👤 %s", userLabel(lang, user.UserID, user.Username)),
+			CallbackData: callback.Format(callback.AccessUser, user.UserID, listCallback),
+		}})
 	}
 
 	if totalPages > 1 {

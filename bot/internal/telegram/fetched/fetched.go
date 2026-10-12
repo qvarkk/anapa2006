@@ -92,7 +92,9 @@ func HandleFetchedChannels(st *store.Store) bot.HandlerFunc {
 			next = callback.Format(callback.FetchedChannels, page+1)
 		}
 
-		rows = append(rows, pagination.BuildPaginationRow(page, tp, prev, next))
+		if row := pagination.MaybeRow(page, tp, prev, next); row != nil {
+			rows = append(rows, row)
+		}
 		rows = append(rows, []models.InlineKeyboardButton{
 			{Text: i18n.T(lang, i18n.BtnBack), CallbackData: callback.Fetched},
 		})

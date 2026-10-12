@@ -32,6 +32,8 @@ type PendingReply struct {
 	PromptMessageID int64         `json:"prompt_message_id"`
 	Action          string        `json:"action"`
 	PostID          sql.NullInt64 `json:"post_id"`
+	MediaID         sql.NullInt64 `json:"media_id"`
+	Position        sql.NullInt64 `json:"position"`
 	Origin          string        `json:"origin"`
 	CreatedAt       time.Time     `json:"created_at"`
 }
@@ -48,9 +50,10 @@ type Post struct {
 }
 
 type PostDraft struct {
-	PostID    int64     `json:"post_id"`
-	FinalText string    `json:"final_text"`
-	CreatedAt time.Time `json:"created_at"`
+	PostID          int64         `json:"post_id"`
+	FinalText       string        `json:"final_text"`
+	TargetChannelID sql.NullInt64 `json:"target_channel_id"`
+	CreatedAt       time.Time     `json:"created_at"`
 }
 
 type PostMedium struct {
@@ -63,14 +66,23 @@ type PostMedium struct {
 }
 
 type Schedule struct {
-	PostID       int64        `json:"post_id"`
-	TargetChatID int64        `json:"target_chat_id"`
-	ScheduledAt  time.Time    `json:"scheduled_at"`
-	SentAt       sql.NullTime `json:"sent_at"`
+	PostID        int64          `json:"post_id"`
+	ScheduledAt   time.Time      `json:"scheduled_at"`
+	SentAt        sql.NullTime   `json:"sent_at"`
+	SentMessageID sql.NullInt64  `json:"sent_message_id"`
+	LastError     sql.NullString `json:"last_error"`
 }
 
 type Source struct {
 	ID            int64  `json:"id"`
 	ChannelHandle string `json:"channel_handle"`
 	Active        int64  `json:"active"`
+}
+
+type TargetChannel struct {
+	ID      int64          `json:"id"`
+	ChatID  int64          `json:"chat_id"`
+	Handle  sql.NullString `json:"handle"`
+	Title   string         `json:"title"`
+	AddedAt time.Time      `json:"added_at"`
 }

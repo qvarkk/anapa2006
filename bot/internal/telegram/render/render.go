@@ -32,10 +32,21 @@ type RenderedPost struct {
 	MediaCounts map[string]int
 }
 
+type DraftListKind string
+
+const (
+	DraftListActive DraftListKind = "active"
+	DraftListPosted DraftListKind = "posted"
+	DraftListFailed DraftListKind = "failed"
+)
+
 type RenderedDraft struct {
 	PostID      int64
-	ScheduledAt sql.NullTime
 	PostStatus  string
+	ScheduledAt sql.NullTime
+	SentAt      sql.NullTime
+	Link        string
+	Error       string
 	Text        string
 	MediaCounts map[string]int
 }
@@ -64,6 +75,7 @@ type PostListPayload struct {
 
 type DraftListPayload struct {
 	renderPayload
+	Kind   DraftListKind
 	Drafts []RenderedDraft
 }
 
@@ -83,7 +95,9 @@ func PostListPage(ctx context.Context, payload PostListPayload) {
 			{Text: i18n.T(payload.Lang, i18n.BtnSelectPost, p.ID), CallbackData: payload.SelectCallback(p.ID)},
 		})
 	}
-	rows = append(rows, pagination.BuildPaginationRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback))
+	if row := pagination.MaybeRow(payload.Page, payload.TotalPages, payload.PrevCallback, payload.NextCallback); row != nil {
+		rows = append(rows, row)
+	}
 	rows = append(rows, []models.InlineKeyboardButton{
 		{Text: i18n.T(payload.Lang, i18n.BtnBack), CallbackData: payload.BackCallback},
 	})
@@ -107,21 +121,12 @@ func PostListPage(ctx context.Context, payload PostListPayload) {
 
 func DraftListPage(ctx context.Context, payload DraftListPayload) {
 	var sb strings.Builder
-	sb.WriteString(i18n.T(payload.Lang, i18n.DraftsList, payload.Total))
+	sb.WriteString(draftListHeader(payload.Lang, payload.Kind, payload.Total))
 	sb.WriteString("\n\n")
 
 	var rows [][]models.InlineKeyboardButton
 	for _, d := range payload.Drafts {
-		scheduledStr := i18n.T(payload.Lang, i18n.Unscheduled)
-		if d.ScheduledAt.Valid {
-			scheduledStr = moscow.Format(d.ScheduledAt.Time)
-		}
-
-		sb.WriteString(i18n.T(payload.Lang, i18n.DraftDetail,
-			d.PostID, scheduledStr, PostStatusLabel(payload.Lang, d.PostStatus),
-			truncate(stripTagsForPreview(d.Text), truncateLength), AttachmentsSummary(d.MediaCounts),
-		))
-
+		sb.WriteString(draftListEntry(payload.Lang, payload.Kind, d))
 		sb.WriteString("\n\n")
 
 		rows = append(rows, []models.InlineKeyboardButton{
@@ -163,6 +168,64 @@ func DraftListPage(ctx context.Context, payload DraftListPayload) {
 			slog.String("error", err.Error()),
 		)
 	}
+}
+
+func draftListHeader(lang i18n.Lang, kind DraftListKind, total int) string {
+	switch kind {
+	case DraftListPosted:
+		return i18n.T(lang, i18n.DraftsListPostedHeader, total)
+	case DraftListFailed:
+		return i18n.T(lang, i18n.DraftsListFailedHeader, total)
+	default:
+		return i18n.T(lang, i18n.DraftsListActiveHeader, total)
+	}
+}
+
+func draftListEntry(lang i18n.Lang, kind DraftListKind, d RenderedDraft) string {
+	switch kind {
+	case DraftListPosted:
+		return i18n.T(lang, i18n.DraftListPostedEntry,
+			d.PostID, d.SentAt.Time.Format("02.01.2006 15:04"),
+			PostedLinkHTML(d.Link),
+			truncate(stripTagsForPreview(d.Text), truncateLength),
+			AttachmentsSummary(d.MediaCounts),
+		)
+	case DraftListFailed:
+		err := d.Error
+		if err == "" {
+			err = i18n.T(lang, i18n.DraftErrorUnknown)
+		}
+		return i18n.T(lang, i18n.DraftListFailedEntry,
+			d.PostID, err,
+			truncate(stripTagsForPreview(d.Text), truncateLength),
+			AttachmentsSummary(d.MediaCounts),
+		)
+	default:
+		scheduledStr := i18n.T(lang, i18n.Unscheduled)
+		if d.ScheduledAt.Valid {
+			scheduledStr = moscow.Format(d.ScheduledAt.Time)
+		}
+		return i18n.T(lang, i18n.DraftDetail,
+			d.PostID, scheduledStr, PostStatusLabel(lang, d.PostStatus),
+			truncate(stripTagsForPreview(d.Text), truncateLength), AttachmentsSummary(d.MediaCounts),
+		)
+	}
+}
+
+func PostedLinkHTML(link string) string {
+	if link == "" {
+		return "—"
+	}
+	return `<a href="` + link + `">` + link + `</a>`
+}
+
+// MessageLink builds a t.me deep link to a message in a public channel. It
+// returns an empty string when no link can be built (private target or no id).
+func MessageLink(handle string, messageID int64) string {
+	if handle == "" || messageID == 0 {
+		return ""
+	}
+	return fmt.Sprintf("https://t.me/%s/%d", handle, messageID)
 }
 
 func AttachmentsSummary(counts map[string]int) string {

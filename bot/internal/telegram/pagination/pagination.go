@@ -58,3 +58,12 @@ func BuildPaginationRow(page, totalPages int, prevCallback, nextCallback string)
 		{Text: "⏩", CallbackData: nextCallback},
 	}
 }
+
+// MaybeRow returns the pagination row, or nil when there is only a single page
+// so no pagination controls are shown.
+func MaybeRow(page, totalPages int, prevCallback, nextCallback string) []models.InlineKeyboardButton {
+	if totalPages <= 1 {
+		return nil
+	}
+	return BuildPaginationRow(page, totalPages, prevCallback, nextCallback)
+}

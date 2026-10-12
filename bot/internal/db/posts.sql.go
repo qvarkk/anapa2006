@@ -370,7 +370,9 @@ UPDATE posts SET status = 'error_sending'
 WHERE status IN ('scheduled', 'sending')
   AND EXISTS (
     SELECT 1 FROM schedule sc
+    JOIN post_drafts pd ON pd.post_id = sc.post_id
     WHERE sc.post_id = posts.id
+      AND pd.target_channel_id IS NOT NULL
       AND sc.sent_at IS NULL
       AND sc.scheduled_at < ?
   )

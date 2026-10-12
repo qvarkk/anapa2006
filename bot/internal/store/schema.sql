@@ -34,9 +34,20 @@ CREATE TABLE IF NOT EXISTS post_media (
   position INTEGER NOT NULL DEFAULT 0
 );
 
+-- Channels posts can be published to. Managed from the bot like sources; the
+-- media cache channel stays an env variable for now.
+CREATE TABLE IF NOT EXISTS target_channels (
+  id INTEGER PRIMARY KEY,
+  chat_id INTEGER NOT NULL UNIQUE,
+  handle TEXT UNIQUE,
+  title TEXT NOT NULL DEFAULT '',
+  added_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS post_drafts (
   post_id INTEGER PRIMARY KEY,
   final_text TEXT NOT NULL,
+  target_channel_id INTEGER REFERENCES target_channels(id) ON DELETE SET NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
@@ -57,9 +68,10 @@ CREATE TABLE IF NOT EXISTS draft_media (
 
 CREATE TABLE IF NOT EXISTS schedule (
   post_id INTEGER PRIMARY KEY,
-  target_chat_id INTEGER NOT NULL,
   scheduled_at DATETIME NOT NULL,
   sent_at DATETIME,
+  sent_message_id INTEGER,
+  last_error TEXT,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
@@ -67,9 +79,11 @@ CREATE TABLE IF NOT EXISTS pending_replies (
   chat_id INTEGER NOT NULL,
   prompt_message_id INTEGER NOT NULL,
   action TEXT NOT NULL
-    CHECK (action IN ('awaiting_text', 'awaiting_schedule', 'awaiting_channel_handle', 'awaiting_user_ref')),
+    CHECK (action IN ('awaiting_text', 'awaiting_schedule', 'awaiting_channel_handle', 'awaiting_target_handle', 'awaiting_user_ref', 'awaiting_media_add_position', 'awaiting_media_add', 'awaiting_media_substitute')),
   -- NULL for prompts that are not about a post
   post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+  media_id INTEGER,
+  position INTEGER,
   origin TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (chat_id, prompt_message_id)

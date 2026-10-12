@@ -10,6 +10,17 @@ import (
 	"database/sql"
 )
 
+const countDraftMedia = `-- name: CountDraftMedia :one
+SELECT COUNT(*) FROM draft_media WHERE draft_id = ?
+`
+
+func (q *Queries) CountDraftMedia(ctx context.Context, draftID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDraftMedia, draftID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countMediaKindsByDraft = `-- name: CountMediaKindsByDraft :many
 SELECT kind, COUNT(*) AS cnt FROM draft_media WHERE draft_id = ? GROUP BY kind
 `
@@ -72,8 +83,46 @@ func (q *Queries) CreateDraftMedia(ctx context.Context, arg CreateDraftMediaPara
 	return err
 }
 
+const deleteDraftMediaByDraft = `-- name: DeleteDraftMediaByDraft :exec
+DELETE FROM draft_media WHERE draft_id = ?
+`
+
+func (q *Queries) DeleteDraftMediaByDraft(ctx context.Context, draftID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteDraftMediaByDraft, draftID)
+	return err
+}
+
+const deleteDraftMediaByID = `-- name: DeleteDraftMediaByID :exec
+DELETE FROM draft_media WHERE id = ?
+`
+
+func (q *Queries) DeleteDraftMediaByID(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteDraftMediaByID, id)
+	return err
+}
+
+const getDraftMediaByID = `-- name: GetDraftMediaByID :one
+SELECT id, draft_id, kind, origin_media_id, file_id, url, position, created_at FROM draft_media WHERE id = ?
+`
+
+func (q *Queries) GetDraftMediaByID(ctx context.Context, id int64) (DraftMedium, error) {
+	row := q.db.QueryRowContext(ctx, getDraftMediaByID, id)
+	var i DraftMedium
+	err := row.Scan(
+		&i.ID,
+		&i.DraftID,
+		&i.Kind,
+		&i.OriginMediaID,
+		&i.FileID,
+		&i.Url,
+		&i.Position,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listDraftMedia = `-- name: ListDraftMedia :many
-SELECT id, draft_id, kind, origin_media_id, file_id, url, position, created_at FROM draft_media WHERE draft_id = ?
+SELECT id, draft_id, kind, origin_media_id, file_id, url, position, created_at FROM draft_media WHERE draft_id = ? ORDER BY position ASC
 `
 
 func (q *Queries) ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error) {
@@ -106,4 +155,19 @@ func (q *Queries) ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMed
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateDraftMedia = `-- name: UpdateDraftMedia :exec
+UPDATE draft_media SET kind = ?, file_id = ?, url = NULL, origin_media_id = NULL WHERE id = ?
+`
+
+type UpdateDraftMediaParams struct {
+	Kind   string         `json:"kind"`
+	FileID sql.NullString `json:"file_id"`
+	ID     int64          `json:"id"`
+}
+
+func (q *Queries) UpdateDraftMedia(ctx context.Context, arg UpdateDraftMediaParams) error {
+	_, err := q.db.ExecContext(ctx, updateDraftMedia, arg.Kind, arg.FileID, arg.ID)
+	return err
 }

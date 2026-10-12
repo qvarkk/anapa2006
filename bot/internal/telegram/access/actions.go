@@ -10,10 +10,84 @@ import (
 	"qq/anapa2006/internal/telegram/callback"
 	"qq/anapa2006/internal/telegram/extract"
 	"qq/anapa2006/internal/telegram/render"
+	"strings"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
+
+func HandleUser(st *store.Store, ownerID int64) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
+		if !requireOwner(ctx, b, update) {
+			return
+		}
+		callback.Ack(ctx, b, update)
+
+		data, origin, err := extract.BackNavigation(update, 2, 1)
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"parse back navagation",
+				slog.String("error", err.Error()),
+			)
+			return
+		}
+		userID := data[0]
+
+		lang := extract.Lang(ctx)
+		chatID, msgID := extract.CallbackTarget(update)
+		backText := i18n.T(lang, i18n.BtnBack)
+
+		user, err := st.GetAllowedUser(ctx, userID)
+		if errors.Is(err, sql.ErrNoRows) {
+			render.EditNotice(
+				ctx, b, chatID, msgID,
+				i18n.T(lang, i18n.OperationSuccess), backText, origin,
+			)
+			return
+		}
+		if err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"get allowed user",
+				slog.Int64("user_id", userID),
+				slog.String("error", err.Error()),
+			)
+			return
+		}
+
+		role := i18n.T(lang, i18n.UserRoleAdmin)
+		if user.UserID == ownerID {
+			role = i18n.T(lang, i18n.UserRoleOwner)
+		}
+
+		thisCallback := update.CallbackQuery.Data
+
+		var rows [][]models.InlineKeyboardButton
+		if user.UserID != ownerID {
+			rows = append(rows, []models.InlineKeyboardButton{{
+				Text:         i18n.T(lang, i18n.BtnDelete),
+				CallbackData: callback.Format(callback.AccessDeletePrompt, user.UserID, thisCallback),
+			}})
+		}
+		rows = append(rows, []models.InlineKeyboardButton{{Text: backText, CallbackData: origin}})
+
+		if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
+			ChatID:    chatID,
+			MessageID: msgID,
+			Text: i18n.T(lang, i18n.AccessListEntry,
+				user.UserID, usernameLabel(lang, user.Username), role),
+			ReplyMarkup: &models.InlineKeyboardMarkup{InlineKeyboard: rows},
+		}); err != nil {
+			slog.LogAttrs(
+				ctx, slog.LevelError,
+				"edit message to user profile failed",
+				slog.Int64("user_id", userID),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+}
 
 func HandleDeletePrompt(st *store.Store, ownerID int64) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -63,8 +137,10 @@ func HandleDeletePrompt(st *store.Store, ownerID int64) bot.HandlerFunc {
 			return
 		}
 
-		// origin is the list callback, so its second component is the page.
-		page := callback.ParseIntPart(origin, 2)
+		// origin is the profile callback (acc:v:<user_id>:<list_callback>);
+		// deletion returns to the list, so recover its page from the callback.
+		listCallback := listCallbackFromProfile(origin)
+		page := callback.ParseIntPart(listCallback, 2)
 
 		if _, err := b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID: chatID, MessageID: msgID,
@@ -85,6 +161,14 @@ func HandleDeletePrompt(st *store.Store, ownerID int64) bot.HandlerFunc {
 			)
 		}
 	}
+}
+
+func listCallbackFromProfile(profileCallback string) string {
+	parts := strings.SplitN(profileCallback, ":", 4)
+	if len(parts) < 4 {
+		return callback.Format(callback.AccessList, 0)
+	}
+	return parts[3]
 }
 
 func HandleDelete(st *store.Store, ownerID int64) bot.HandlerFunc {

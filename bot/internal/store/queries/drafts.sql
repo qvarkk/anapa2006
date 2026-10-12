@@ -17,7 +17,7 @@ SELECT EXISTS (
 );
 
 -- name: CreatePostDraft :one
-INSERT INTO post_drafts (post_id, final_text, user_id) VALUES (?, ?, ?) RETURNING *;
+INSERT INTO post_drafts (post_id, final_text) VALUES (?, ?) RETURNING *;
 
 -- name: UpdatePostDraftText :exec
 UPDATE post_drafts SET final_text = ? WHERE post_id = ?;

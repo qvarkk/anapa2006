@@ -36,12 +36,75 @@ func (q *Queries) CreateSource(ctx context.Context, arg CreateSourceParams) (Sou
 	return i, err
 }
 
+const deleteSource = `-- name: DeleteSource :exec
+DELETE FROM sources WHERE id = ?
+`
+
+func (q *Queries) DeleteSource(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteSource, id)
+	return err
+}
+
 const getActiveSources = `-- name: GetActiveSources :many
 SELECT id, channel_handle, active FROM sources WHERE active = 1
 `
 
 func (q *Queries) GetActiveSources(ctx context.Context) ([]Source, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveSources)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Source
+	for rows.Next() {
+		var i Source
+		if err := rows.Scan(&i.ID, &i.ChannelHandle, &i.Active); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSourceByHandle = `-- name: GetSourceByHandle :one
+SELECT id, channel_handle, active FROM sources WHERE channel_handle = ?
+`
+
+func (q *Queries) GetSourceByHandle(ctx context.Context, channelHandle string) (Source, error) {
+	row := q.db.QueryRowContext(ctx, getSourceByHandle, channelHandle)
+	var i Source
+	err := row.Scan(&i.ID, &i.ChannelHandle, &i.Active)
+	return i, err
+}
+
+const getSourceByID = `-- name: GetSourceByID :one
+SELECT id, channel_handle, active FROM sources WHERE id = ?
+`
+
+func (q *Queries) GetSourceByID(ctx context.Context, id int64) (Source, error) {
+	row := q.db.QueryRowContext(ctx, getSourceByID, id)
+	var i Source
+	err := row.Scan(&i.ID, &i.ChannelHandle, &i.Active)
+	return i, err
+}
+
+const listSources = `-- name: ListSources :many
+SELECT id, channel_handle, active FROM sources ORDER BY channel_handle ASC LIMIT ? OFFSET ?
+`
+
+type ListSourcesParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListSources(ctx context.Context, arg ListSourcesParams) ([]Source, error) {
+	rows, err := q.db.QueryContext(ctx, listSources, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -105,4 +168,13 @@ func (q *Queries) ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWi
 		return nil, err
 	}
 	return items, nil
+}
+
+const toggleSourceActive = `-- name: ToggleSourceActive :exec
+UPDATE sources SET active = 1 - active WHERE id = ?
+`
+
+func (q *Queries) ToggleSourceActive(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, toggleSourceActive, id)
+	return err
 }

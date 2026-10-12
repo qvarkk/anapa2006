@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"qq/anapa2006/internal/db"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -52,10 +53,57 @@ func Open(path string) (*Store, error) {
 		return nil, fmt.Errorf("store: apply schema: %w", err)
 	}
 
+	if err := verifySchema(conn); err != nil {
+		conn.Close()
+		return nil, err
+	}
+
 	return &Store{
 		Queries: db.New(conn),
 		Conn:    conn,
 	}, err
+}
+
+// verifySchema rejects databases created before a schema change. The schema is
+// applied with CREATE TABLE IF NOT EXISTS, so an existing database silently keeps
+// its old shape; without this check the mismatch surfaces later as a confusing
+// constraint or foreign key error.
+func verifySchema(conn *sql.DB) error {
+	checks := []struct {
+		table   string
+		marker  string
+		present bool // whether the marker must appear in the stored DDL
+	}{
+		{"pending_replies", "awaiting_channel_handle", true},
+		{"post_drafts", "user_id", false},
+	}
+
+	for _, c := range checks {
+		var ddl string
+		err := conn.QueryRow(
+			`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?`, c.table,
+		).Scan(&ddl)
+		if err != nil {
+			return fmt.Errorf("store: read schema of table %q: %w", c.table, err)
+		}
+
+		if strings.Contains(ddl, c.marker) != c.present {
+			return fmt.Errorf(
+				"store: outdated database schema: table %q does not match the current schema (%q must be %s); "+
+					"delete the database file (or the docker volume) and start again",
+				c.table, c.marker, presentLabel(c.present),
+			)
+		}
+	}
+
+	return nil
+}
+
+func presentLabel(present bool) string {
+	if present {
+		return "present"
+	}
+	return "absent"
 }
 
 func (s *Store) Close() error {

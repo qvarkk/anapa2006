@@ -2,6 +2,7 @@ package drafts
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/domain"
@@ -78,7 +79,7 @@ func HandleEditTextPrompt(st *store.Store) bot.HandlerFunc {
 			ChatID:          chatID,
 			PromptMessageID: int64(sent.ID),
 			Action:          domain.PendingActionAwaitingText,
-			PostID:          draft.PostID,
+			PostID:          sql.NullInt64{Int64: draft.PostID, Valid: true},
 			Origin:          origin,
 		}); err != nil {
 			slog.LogAttrs(
@@ -147,7 +148,7 @@ func HandleCustomSchedulePrompt(st *store.Store) bot.HandlerFunc {
 			ChatID:          chatID,
 			PromptMessageID: int64(sent.ID),
 			Action:          domain.PendingActionAwaitingSchedule,
-			PostID:          draft.PostID,
+			PostID:          sql.NullInt64{Int64: draft.PostID, Valid: true},
 			Origin:          origin,
 		}); err != nil {
 			slog.LogAttrs(

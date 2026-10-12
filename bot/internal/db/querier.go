@@ -15,6 +15,8 @@ type Querier interface {
 	CheckDraftScheduled(ctx context.Context, postID int64) (bool, error)
 	CheckPostDraftExists(ctx context.Context, postID int64) (bool, error)
 	ClaimScheduledPost(ctx context.Context, id int64) (Post, error)
+	CountAllPostsBySource(ctx context.Context, sourceID int64) (int64, error)
+	CountAllowedUsers(ctx context.Context) (int64, error)
 	CountDrafts(ctx context.Context) (int64, error)
 	CountMediaKindsByDraft(ctx context.Context, draftID int64) ([]CountMediaKindsByDraftRow, error)
 	CountMediaKindsByPost(ctx context.Context, postID int64) ([]CountMediaKindsByPostRow, error)
@@ -26,27 +28,34 @@ type Querier interface {
 	CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) error
 	CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error)
+	DeleteAllowedUser(ctx context.Context, userID int64) error
 	DeleteDraft(ctx context.Context, postID int64) error
 	DeletePendingReply(ctx context.Context, arg DeletePendingReplyParams) error
 	DeletePost(ctx context.Context, id int64) error
 	DeletePostMedia(ctx context.Context, postID int64) error
+	DeleteSource(ctx context.Context, id int64) error
 	Deschedule(ctx context.Context, postID int64) error
 	GetActiveSources(ctx context.Context) ([]Source, error)
 	GetAllowedUser(ctx context.Context, userID int64) (GetAllowedUserRow, error)
+	GetLatestPendingReplyByAction(ctx context.Context, arg GetLatestPendingReplyByActionParams) (PendingReply, error)
 	GetPendingReply(ctx context.Context, arg GetPendingReplyParams) (PendingReply, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
 	GetPostDraftByID(ctx context.Context, postID int64) (PostDraft, error)
 	GetPostScheduleByID(ctx context.Context, postID int64) (Schedule, error)
 	GetPostWithSource(ctx context.Context, id int64) (GetPostWithSourceRow, error)
 	GetRetrieablePosts(ctx context.Context, retryCount int64) ([]Post, error)
+	GetSourceByHandle(ctx context.Context, channelHandle string) (Source, error)
+	GetSourceByID(ctx context.Context, id int64) (Source, error)
 	HidePost(ctx context.Context, id int64) error
 	IncrementRetryCount(ctx context.Context, id int64) error
+	ListAllowedUsers(ctx context.Context, arg ListAllowedUsersParams) ([]AllowedUser, error)
 	ListDraftMedia(ctx context.Context, draftID int64) ([]DraftMedium, error)
 	ListDraftsLatest(ctx context.Context, arg ListDraftsLatestParams) ([]ListDraftsLatestRow, error)
 	ListDuePending(ctx context.Context, scheduledAt time.Time) ([]Schedule, error)
 	ListPostMedia(ctx context.Context, postID int64) ([]PostMedium, error)
 	ListPostsBySource(ctx context.Context, arg ListPostsBySourceParams) ([]ListPostsBySourceRow, error)
 	ListPostsLatest(ctx context.Context, arg ListPostsLatestParams) ([]ListPostsLatestRow, error)
+	ListSources(ctx context.Context, arg ListSourcesParams) ([]Source, error)
 	ListSourcesWithNewCount(ctx context.Context, arg ListSourcesWithNewCountParams) ([]ListSourcesWithNewCountRow, error)
 	ListUncachedMediaByPostID(ctx context.Context, postID int64) ([]PostMedium, error)
 	MarkPostArchived(ctx context.Context, id int64) error
@@ -59,6 +68,7 @@ type Querier interface {
 	MarkStaleSending(ctx context.Context, scheduledAt time.Time) error
 	ResetPostToNew(ctx context.Context, id int64) error
 	SetPostMediaFileID(ctx context.Context, arg SetPostMediaFileIDParams) error
+	ToggleSourceActive(ctx context.Context, id int64) error
 	UnhidePost(ctx context.Context, id int64) error
 	UpdatePostDraftText(ctx context.Context, arg UpdatePostDraftTextParams) error
 	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)

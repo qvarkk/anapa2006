@@ -25,6 +25,26 @@ func (q *Queries) AddAllowedUser(ctx context.Context, arg AddAllowedUserParams) 
 	return err
 }
 
+const countAllowedUsers = `-- name: CountAllowedUsers :one
+SELECT COUNT(*) FROM allowed_users
+`
+
+func (q *Queries) CountAllowedUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAllowedUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const deleteAllowedUser = `-- name: DeleteAllowedUser :exec
+DELETE FROM allowed_users WHERE user_id = ?
+`
+
+func (q *Queries) DeleteAllowedUser(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteAllowedUser, userID)
+	return err
+}
+
 const getAllowedUser = `-- name: GetAllowedUser :one
 SELECT user_id, username, lang FROM allowed_users WHERE user_id = ?
 `
@@ -40,4 +60,43 @@ func (q *Queries) GetAllowedUser(ctx context.Context, userID int64) (GetAllowedU
 	var i GetAllowedUserRow
 	err := row.Scan(&i.UserID, &i.Username, &i.Lang)
 	return i, err
+}
+
+const listAllowedUsers = `-- name: ListAllowedUsers :many
+SELECT user_id, username, lang, added_at FROM allowed_users
+ORDER BY added_at ASC, user_id ASC
+LIMIT ? OFFSET ?
+`
+
+type ListAllowedUsersParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListAllowedUsers(ctx context.Context, arg ListAllowedUsersParams) ([]AllowedUser, error) {
+	rows, err := q.db.QueryContext(ctx, listAllowedUsers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AllowedUser
+	for rows.Next() {
+		var i AllowedUser
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Username,
+			&i.Lang,
+			&i.AddedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

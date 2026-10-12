@@ -11,13 +11,21 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func startMenuKeyboard(lang i18n.Lang) *models.InlineKeyboardMarkup {
-	return &models.InlineKeyboardMarkup{
-		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: callback.Fetched}},
-			{{Text: i18n.T(lang, i18n.BtnDraftsMenu), CallbackData: callback.DraftsMenu}},
-		},
+func startMenuKeyboard(lang i18n.Lang, owner bool) *models.InlineKeyboardMarkup {
+	rows := [][]models.InlineKeyboardButton{
+		{{Text: i18n.T(lang, i18n.BtnNewPosts), CallbackData: callback.Fetched}},
+		{{Text: i18n.T(lang, i18n.BtnDraftsMenu), CallbackData: callback.DraftsMenu}},
+		{{Text: i18n.T(lang, i18n.BtnManageChannels), CallbackData: callback.ChannelsMenu}},
 	}
+
+	// Only the owner may manage access; the handlers check this as well.
+	if owner {
+		rows = append(rows, []models.InlineKeyboardButton{
+			{Text: i18n.T(lang, i18n.BtnManageAccess), CallbackData: callback.AccessMenu},
+		})
+	}
+
+	return &models.InlineKeyboardMarkup{InlineKeyboard: rows}
 }
 
 func HandleCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -25,7 +33,7 @@ func HandleCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
 		Text:        i18n.T(lang, i18n.Start),
-		ReplyMarkup: startMenuKeyboard(lang),
+		ReplyMarkup: startMenuKeyboard(lang, extract.IsOwner(ctx)),
 	})
 }
 
@@ -39,7 +47,7 @@ func HandleCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
 		ChatID:      chatID,
 		MessageID:   msgID,
 		Text:        i18n.T(lang, i18n.Start),
-		ReplyMarkup: startMenuKeyboard(lang),
+		ReplyMarkup: startMenuKeyboard(lang, extract.IsOwner(ctx)),
 	})
 	if err != nil {
 		slog.LogAttrs(

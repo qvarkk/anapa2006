@@ -62,6 +62,9 @@ UPDATE posts SET status = 'sent' WHERE id = ?;
 -- name: MarkPostFailed :exec
 UPDATE posts SET status = 'fetch_error' WHERE id = ?;
 
+-- name: CountAllPostsBySource :one
+SELECT COUNT(*) FROM posts WHERE source_id = ?;
+
 -- name: MarkPostArchived :exec
 UPDATE posts SET status = 'archived' WHERE id = ?;
 

@@ -33,6 +33,17 @@ func (q *Queries) ClaimScheduledPost(ctx context.Context, id int64) (Post, error
 	return i, err
 }
 
+const countAllPostsBySource = `-- name: CountAllPostsBySource :one
+SELECT COUNT(*) FROM posts WHERE source_id = ?
+`
+
+func (q *Queries) CountAllPostsBySource(ctx context.Context, sourceID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAllPostsBySource, sourceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countPosts = `-- name: CountPosts :one
 SELECT COUNT(*) FROM posts WHERE status <> 'fetch_error'
 `

@@ -16,6 +16,11 @@ type Config struct {
 	TelegramChannelChatID      int64 `required:"true" envconfig:"TELEGRAM_CHANNEL_CHAT_ID"`
 	TelegramCacheChannelChatID int64 `required:"true" envconfig:"TELEGRAM_CACHE_CHANNEL_CHAT_ID"`
 
+	// Owner of the bot. Has full access and is the only one who may manage
+	// users; it is seeded into allowed_users by the /bootstrap command.
+	// 0 means "not configured".
+	TelegramOwnerID int64 `envconfig:"TELEGRAM_OWNER_ID"`
+
 	DBPath string `default:"/var/opt/anapa2006/anapa2006.db" envconfig:"DB_PATH"`
 
 	RsshubBaseUrl *url.URL `default:"http://rsshub:1200" envconfig:"RSSHUB_BASE_URL"`

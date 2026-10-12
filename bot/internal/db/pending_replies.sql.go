@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createPendingReply = `-- name: CreatePendingReply :exec
@@ -15,11 +16,11 @@ VALUES (?, ?, ?, ?, ?)
 `
 
 type CreatePendingReplyParams struct {
-	ChatID          int64  `json:"chat_id"`
-	PromptMessageID int64  `json:"prompt_message_id"`
-	Action          string `json:"action"`
-	PostID          int64  `json:"post_id"`
-	Origin          string `json:"origin"`
+	ChatID          int64         `json:"chat_id"`
+	PromptMessageID int64         `json:"prompt_message_id"`
+	Action          string        `json:"action"`
+	PostID          sql.NullInt64 `json:"post_id"`
+	Origin          string        `json:"origin"`
 }
 
 func (q *Queries) CreatePendingReply(ctx context.Context, arg CreatePendingReplyParams) error {
@@ -45,6 +46,32 @@ type DeletePendingReplyParams struct {
 func (q *Queries) DeletePendingReply(ctx context.Context, arg DeletePendingReplyParams) error {
 	_, err := q.db.ExecContext(ctx, deletePendingReply, arg.ChatID, arg.PromptMessageID)
 	return err
+}
+
+const getLatestPendingReplyByAction = `-- name: GetLatestPendingReplyByAction :one
+SELECT chat_id, prompt_message_id, "action", post_id, origin, created_at FROM pending_replies
+WHERE chat_id = ? AND action = ?
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetLatestPendingReplyByActionParams struct {
+	ChatID int64  `json:"chat_id"`
+	Action string `json:"action"`
+}
+
+func (q *Queries) GetLatestPendingReplyByAction(ctx context.Context, arg GetLatestPendingReplyByActionParams) (PendingReply, error) {
+	row := q.db.QueryRowContext(ctx, getLatestPendingReplyByAction, arg.ChatID, arg.Action)
+	var i PendingReply
+	err := row.Scan(
+		&i.ChatID,
+		&i.PromptMessageID,
+		&i.Action,
+		&i.PostID,
+		&i.Origin,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getPendingReply = `-- name: GetPendingReply :one

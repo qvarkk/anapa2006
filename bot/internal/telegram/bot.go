@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"qq/anapa2006/internal/i18n"
 	"qq/anapa2006/internal/store"
+	"qq/anapa2006/internal/telegram/access"
 	"qq/anapa2006/internal/telegram/callback"
+	"qq/anapa2006/internal/telegram/channels"
 	"qq/anapa2006/internal/telegram/commands"
 	"qq/anapa2006/internal/telegram/def"
 	"qq/anapa2006/internal/telegram/drafts"
@@ -23,18 +25,19 @@ import (
 type Config struct {
 	Token     string
 	ChannelID int64
+	OwnerID   int64
 }
 
 func New(ctx context.Context, cfg Config, st *store.Store) (*bot.Bot, error) {
 	b, err := bot.New(cfg.Token,
-		bot.WithMiddlewares(middleware.RequireAllowed(st)),
+		bot.WithMiddlewares(middleware.RequireAllowed(st, cfg.OwnerID)),
 		bot.WithDefaultHandler(def.Handle),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	registerHandlers(b, cfg.ChannelID, st)
+	registerHandlers(b, cfg, st)
 
 	if err := setCommandsMenu(ctx, b); err != nil {
 		slog.LogAttrs(
@@ -47,9 +50,13 @@ func New(ctx context.Context, cfg Config, st *store.Store) (*bot.Bot, error) {
 	return b, nil
 }
 
-func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
-	// Posts edit match func
-	b.RegisterHandlerMatchFunc(reply.IsReplyToBot, reply.HandlePendingReply(st, channelID))
+func registerHandlers(b *bot.Bot, cfg Config, st *store.Store) {
+	// Single entry point for answers to bot prompts (drafts, schedule, channel
+	// handle, user reference) and for forwarded messages.
+	b.RegisterHandlerMatchFunc(reply.IsReplyOrForward, reply.HandlePendingReply(st, cfg.ChannelID))
+
+	// Bootstrap: the only handler reachable by the owner before they are allowed
+	b.RegisterHandlerMatchFunc(access.IsBootstrapCommand, access.HandleBootstrap(st, cfg.OwnerID))
 
 	// Start
 	b.RegisterHandler(bot.HandlerTypeMessageText, commands.Start, bot.MatchTypeExact, start.HandleCommand)
@@ -78,7 +85,7 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerPrefixCallback(b, callback.DraftsListPrefix, drafts.HandleList(st))
 	registerPrefixCallback(b, callback.DraftDetailPrefix, drafts.HandleDetail(st))
 	registerPrefixCallback(b, callback.DraftCreatePrefix, drafts.HandleCreate(st))
-	registerPrefixCallback(b, callback.DraftQueuePrefix, drafts.HandleQueue(st, channelID))
+	registerPrefixCallback(b, callback.DraftQueuePrefix, drafts.HandleQueue(st, cfg.ChannelID))
 	registerPrefixCallback(b, callback.DraftDequeuePrefix, drafts.HandleDequeue(st))
 	registerPrefixCallback(b, callback.DraftDeletePrefix, drafts.HandleDelete(st))
 	registerPrefixCallback(b, callback.DraftShowPrefix, drafts.HandleShow(st))
@@ -89,6 +96,21 @@ func registerHandlers(b *bot.Bot, channelID int64, st *store.Store) {
 	registerPrefixCallback(b, callback.DraftPromptEditTextPrefix, drafts.HandleEditTextPrompt(st))
 	registerPrefixCallback(b, callback.DraftPromptQueuePrefix, drafts.HandleQueuePrompt(st))
 	registerPrefixCallback(b, callback.DraftPromptCustomPrefix, drafts.HandleCustomSchedulePrompt(st))
+
+	// Channels
+	registerExactCallback(b, callback.ChannelsMenu, channels.HandleMenu)
+	registerPrefixCallback(b, callback.ChannelsListPrefix, channels.HandleList(st))
+	registerPrefixCallback(b, callback.ChannelsAddPrefix, channels.HandleAddPrompt(st))
+	registerPrefixCallback(b, callback.ChannelsTogglePrefix, channels.HandleToggle(st))
+	registerPrefixCallback(b, callback.ChannelsDeletePromptPrefix, channels.HandleDeletePrompt(st))
+	registerPrefixCallback(b, callback.ChannelsDeletePrefix, channels.HandleDelete(st))
+
+	// Access (owner only, re-checked inside every handler)
+	registerExactCallback(b, callback.AccessMenu, access.HandleMenu)
+	registerPrefixCallback(b, callback.AccessListPrefix, access.HandleList(st, cfg.OwnerID))
+	registerPrefixCallback(b, callback.AccessAddPrefix, access.HandleAddPrompt(st))
+	registerPrefixCallback(b, callback.AccessDeletePromptPrefix, access.HandleDeletePrompt(st, cfg.OwnerID))
+	registerPrefixCallback(b, callback.AccessDeletePrefix, access.HandleDelete(st, cfg.OwnerID))
 }
 
 func registerExactCallback(b *bot.Bot, callback string, f bot.HandlerFunc) {

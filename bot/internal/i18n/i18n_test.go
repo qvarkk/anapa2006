@@ -16,9 +16,19 @@ var allSimpleKeys = []Key{
 	BtnUse,
 	BtnEdit,
 	BtnSkip,
+	BtnDelete,
+
+	OwnerOnly,
+	NoUsername,
 
 	BtnOpenMenu,
 	BtnNewPosts,
+	BtnManageChannels,
+	BtnManageAccess,
+
+	BootstrapSuccess,
+	BootstrapAlready,
+	BootstrapNoOwner,
 
 	PostStatusNew,
 	PostStatusSkipped,
@@ -57,6 +67,39 @@ var allSimpleKeys = []Key{
 
 	EditPrompt,
 	EditPlaceholder,
+
+	ChannelsMenu,
+	ChannelsListHeader,
+	ChannelsListEntry,
+	ChannelStatusActive,
+	ChannelStatusOff,
+	BtnChannelsList,
+	BtnChannelAdd,
+	ChannelAddPrompt,
+	ChannelAddHolder,
+	ChannelAddInvalid,
+	ChannelAddNotFound,
+	ChannelAddNotChannel,
+	ChannelAddDuplicate,
+	ChannelAddSuccess,
+	ChannelDeletePrompt,
+	ChannelDeleteBlocked,
+
+	AccessMenu,
+	AccessListHeader,
+	AccessListEntry,
+	UserRoleOwner,
+	UserRoleAdmin,
+	BtnAccessList,
+	BtnUserAdd,
+	UserAddPrompt,
+	UserAddHolder,
+	UserAddInvalid,
+	UserAddNeedID,
+	UserAddDuplicate,
+	UserAddSuccess,
+	UserDeletePrompt,
+	UserDeleteOwnerForbidden,
 }
 
 var allPluralKeys = []PluralKey{

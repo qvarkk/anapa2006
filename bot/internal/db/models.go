@@ -28,12 +28,12 @@ type DraftMedium struct {
 }
 
 type PendingReply struct {
-	ChatID          int64     `json:"chat_id"`
-	PromptMessageID int64     `json:"prompt_message_id"`
-	Action          string    `json:"action"`
-	PostID          int64     `json:"post_id"`
-	Origin          string    `json:"origin"`
-	CreatedAt       time.Time `json:"created_at"`
+	ChatID          int64         `json:"chat_id"`
+	PromptMessageID int64         `json:"prompt_message_id"`
+	Action          string        `json:"action"`
+	PostID          sql.NullInt64 `json:"post_id"`
+	Origin          string        `json:"origin"`
+	CreatedAt       time.Time     `json:"created_at"`
 }
 
 type Post struct {
@@ -50,7 +50,6 @@ type Post struct {
 type PostDraft struct {
 	PostID    int64     `json:"post_id"`
 	FinalText string    `json:"final_text"`
-	UserID    int64     `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

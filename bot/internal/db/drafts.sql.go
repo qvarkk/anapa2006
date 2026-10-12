@@ -54,24 +54,18 @@ func (q *Queries) CountDrafts(ctx context.Context) (int64, error) {
 }
 
 const createPostDraft = `-- name: CreatePostDraft :one
-INSERT INTO post_drafts (post_id, final_text, user_id) VALUES (?, ?, ?) RETURNING post_id, final_text, user_id, created_at
+INSERT INTO post_drafts (post_id, final_text) VALUES (?, ?) RETURNING post_id, final_text, created_at
 `
 
 type CreatePostDraftParams struct {
 	PostID    int64  `json:"post_id"`
 	FinalText string `json:"final_text"`
-	UserID    int64  `json:"user_id"`
 }
 
 func (q *Queries) CreatePostDraft(ctx context.Context, arg CreatePostDraftParams) (PostDraft, error) {
-	row := q.db.QueryRowContext(ctx, createPostDraft, arg.PostID, arg.FinalText, arg.UserID)
+	row := q.db.QueryRowContext(ctx, createPostDraft, arg.PostID, arg.FinalText)
 	var i PostDraft
-	err := row.Scan(
-		&i.PostID,
-		&i.FinalText,
-		&i.UserID,
-		&i.CreatedAt,
-	)
+	err := row.Scan(&i.PostID, &i.FinalText, &i.CreatedAt)
 	return i, err
 }
 
@@ -85,23 +79,18 @@ func (q *Queries) DeleteDraft(ctx context.Context, postID int64) error {
 }
 
 const getPostDraftByID = `-- name: GetPostDraftByID :one
-SELECT post_id, final_text, user_id, created_at FROM post_drafts WHERE post_id = ?
+SELECT post_id, final_text, created_at FROM post_drafts WHERE post_id = ?
 `
 
 func (q *Queries) GetPostDraftByID(ctx context.Context, postID int64) (PostDraft, error) {
 	row := q.db.QueryRowContext(ctx, getPostDraftByID, postID)
 	var i PostDraft
-	err := row.Scan(
-		&i.PostID,
-		&i.FinalText,
-		&i.UserID,
-		&i.CreatedAt,
-	)
+	err := row.Scan(&i.PostID, &i.FinalText, &i.CreatedAt)
 	return i, err
 }
 
 const listDraftsLatest = `-- name: ListDraftsLatest :many
-SELECT pd.post_id, pd.final_text, pd.user_id, pd.created_at, p.status, s.scheduled_at FROM post_drafts pd
+SELECT pd.post_id, pd.final_text, pd.created_at, p.status, s.scheduled_at FROM post_drafts pd
 JOIN posts p ON p.id = pd.post_id
 LEFT JOIN schedule s ON s.post_id = pd.post_id
 ORDER BY s.scheduled_at DESC
@@ -116,7 +105,6 @@ type ListDraftsLatestParams struct {
 type ListDraftsLatestRow struct {
 	PostID      int64        `json:"post_id"`
 	FinalText   string       `json:"final_text"`
-	UserID      int64        `json:"user_id"`
 	CreatedAt   time.Time    `json:"created_at"`
 	Status      string       `json:"status"`
 	ScheduledAt sql.NullTime `json:"scheduled_at"`
@@ -134,7 +122,6 @@ func (q *Queries) ListDraftsLatest(ctx context.Context, arg ListDraftsLatestPara
 		if err := rows.Scan(
 			&i.PostID,
 			&i.FinalText,
-			&i.UserID,
 			&i.CreatedAt,
 			&i.Status,
 			&i.ScheduledAt,

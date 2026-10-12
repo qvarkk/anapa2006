@@ -29,6 +29,19 @@ func main() {
 	logger := logger.NewSlogger(cfg.Debug)
 	slog.SetDefault(logger.Logger)
 
+	if cfg.TelegramOwnerID == 0 {
+		slog.LogAttrs(
+			ctx, slog.LevelWarn,
+			"TELEGRAM_OWNER_ID is not set: /bootstrap will refuse, so nobody can get access",
+		)
+	} else {
+		slog.LogAttrs(
+			ctx, slog.LevelInfo,
+			"owner configured, waiting for /bootstrap if they are not in the database yet",
+			slog.Int64("owner_id", cfg.TelegramOwnerID),
+		)
+	}
+
 	st, err := store.Open(cfg.DBPath)
 	if err != nil {
 		slog.LogAttrs(
@@ -42,6 +55,7 @@ func main() {
 	tgCfg := telegram.Config{
 		Token:     cfg.TelegramBotToken,
 		ChannelID: cfg.TelegramChannelChatID,
+		OwnerID:   cfg.TelegramOwnerID,
 	}
 
 	slog.LogAttrs(ctx, slog.LevelInfo, "starting bot...")

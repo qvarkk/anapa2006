@@ -43,14 +43,26 @@ const (
 	OperationSuccess   Key = "operation_success"
 
 	// Common buttons
-	BtnBack Key = "btn_back"
-	BtnUse  Key = "btn_use"
-	BtnEdit Key = "btn_edit"
-	BtnSkip Key = "btn_skip"
+	BtnBack   Key = "btn_back"
+	BtnUse    Key = "btn_use"
+	BtnEdit   Key = "btn_edit"
+	BtnSkip   Key = "btn_skip"
+	BtnDelete Key = "btn_delete"
+
+	// Common messages
+	OwnerOnly  Key = "owner_only"
+	NoUsername Key = "no_username"
 
 	// Start menu buttons
-	BtnOpenMenu Key = "btn_open_menu"
-	BtnNewPosts Key = "btn_new_posts"
+	BtnOpenMenu       Key = "btn_open_menu"
+	BtnNewPosts       Key = "btn_new_posts"
+	BtnManageChannels Key = "btn_manage_channels"
+	BtnManageAccess   Key = "btn_manage_access"
+
+	// Bootstrap
+	BootstrapSuccess Key = "bootstrap_success"
+	BootstrapAlready Key = "bootstrap_already"
+	BootstrapNoOwner Key = "bootstrap_no_owner"
 
 	// Posts statuses
 	PostStatusNew          Key = "post_status_new"
@@ -136,6 +148,41 @@ const (
 	BtnDraftDequeue   Key = "btn_draft_dequeue"
 	BtnDraftDelete    Key = "btn_draft_delete"
 	BtnDraftShow      Key = "btn_draft_show"
+
+	// Channel management
+	ChannelsMenu         Key = "channels_menu"
+	ChannelsListHeader   Key = "channels_list_header"
+	ChannelsListEntry    Key = "channels_list_entry"
+	ChannelStatusActive  Key = "channel_status_active"
+	ChannelStatusOff     Key = "channel_status_off"
+	BtnChannelsList      Key = "btn_channels_list"
+	BtnChannelAdd        Key = "btn_channel_add"
+	ChannelAddPrompt     Key = "channel_add_prompt"
+	ChannelAddHolder     Key = "channel_add_placeholder"
+	ChannelAddInvalid    Key = "channel_add_invalid"
+	ChannelAddNotFound   Key = "channel_add_not_found"
+	ChannelAddNotChannel Key = "channel_add_not_channel"
+	ChannelAddDuplicate  Key = "channel_add_duplicate"
+	ChannelAddSuccess    Key = "channel_add_success"
+	ChannelDeletePrompt  Key = "channel_delete_prompt"
+	ChannelDeleteBlocked Key = "channel_delete_blocked"
+
+	// Access management
+	AccessMenu               Key = "access_menu"
+	AccessListHeader         Key = "access_list_header"
+	AccessListEntry          Key = "access_list_entry"
+	UserRoleOwner            Key = "user_role_owner"
+	UserRoleAdmin            Key = "user_role_admin"
+	BtnAccessList            Key = "btn_access_list"
+	BtnUserAdd               Key = "btn_user_add"
+	UserAddPrompt            Key = "user_add_prompt"
+	UserAddHolder            Key = "user_add_placeholder"
+	UserAddInvalid           Key = "user_add_invalid"
+	UserAddNeedID            Key = "user_add_need_id"
+	UserAddDuplicate         Key = "user_add_duplicate"
+	UserAddSuccess           Key = "user_add_success"
+	UserDeletePrompt         Key = "user_delete_prompt"
+	UserDeleteOwnerForbidden Key = "user_delete_owner_forbidden"
 )
 
 // !!!

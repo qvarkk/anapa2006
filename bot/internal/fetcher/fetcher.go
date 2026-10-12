@@ -123,7 +123,6 @@ func (f *Fetcher) Tick(ctx context.Context) {
 			continue
 		}
 
-		// Media is cached now, so the post is usable again and may be shown.
 		if err := f.store.ResetPostToNew(ctx, post.ID); err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelWarn,

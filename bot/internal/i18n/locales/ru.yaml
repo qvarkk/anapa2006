@@ -23,9 +23,18 @@ simple:
   btn_use: "▶️ Использовать"
   btn_edit: "📝 Редактировать"
   btn_skip: "🗑️ Скип"
+  btn_delete: "🗑️ Удалить"
+  owner_only: "⛔ Это доступно только владельцу бота."
+  no_username: "без @username"
   #
   btn_open_menu: "📃 Открыть меню"
   btn_new_posts: "🆕 Новые посты"
+  btn_manage_channels: "📡 Каналы"
+  btn_manage_access: "🔐 Доступ"
+  #
+  bootstrap_success: "✅ Вы добавлены как владелец. Отправьте /start."
+  bootstrap_already: "ℹ️ Владелец уже добавлен."
+  bootstrap_no_owner: "⛔ Владелец не настроен: задайте TELEGRAM_OWNER_ID и перезапустите бота."
   #
   post_status_new: "🆕 Новый"
   post_status_skipped: "⛈️ Скрыт"
@@ -139,6 +148,70 @@ simple:
   btn_draft_dequeue: "❌ Снять с публикации"
   btn_draft_delete: "🗑️ Удалить"
   btn_draft_show: "👁️‍🗨️ Предпросмотр"
+  #
+  channels_menu: |
+    📡 Управление каналами
+
+    Здесь можно добавлять, включать, отключать и удалять источники постов.
+  channels_list_header: "📡 Каналы (всего %d):"
+  channels_list_entry: |
+    🫆 <b>ID:</b> %[1]d
+    📡 <b>@%[2]s</b>
+    %[3]s
+  channel_status_active: "✅ Активен"
+  channel_status_off: "⛔️ Отключён"
+  btn_channels_list: "📋 Список каналов"
+  btn_channel_add: "➕ Добавить канал"
+  channel_add_prompt: |
+    📡 Отправьте handle канала (без @).
+
+    Например: durov
+  channel_add_placeholder: "handle канала"
+  channel_add_invalid: |
+    ❓ Такой handle не подходит.
+
+    Нужны латинские буквы, цифры или _, от 5 до 32 символов. Ответьте на сообщение с запросом ещё раз — или вернитесь назад.
+  channel_add_not_found: |
+    ❓ Канал @%s не найден в Telegram.
+
+    Проверьте handle и ответьте на сообщение с запросом ещё раз — или вернитесь назад.
+  channel_add_not_channel: |
+    ❓ @%s — это не публичный канал.
+
+    Укажите handle публичного канала или вернитесь назад.
+  channel_add_duplicate: "ℹ️ Канал @%s уже добавлен."
+  channel_add_success: "✅ Канал @%s добавлен."
+  channel_delete_prompt: "🗑 Удалить канал @%s?"
+  channel_delete_blocked: "⛔️ Нельзя удалить @%s: у канала %d постов.\n\nУдалите посты или просто отключите канал."
+  #
+  access_menu: |
+    🔐 Управление доступом
+
+    Здесь можно добавлять и удалять пользователей. Владелец задаётся переменной окружения и удалению не подлежит.
+  access_list_header: "🔐 Пользователи (всего %d):"
+  access_list_entry: |
+    🫆 <b>ID:</b> %[1]d
+    👤 %[2]s
+    %[3]s
+  user_role_owner: "👑 Владелец"
+  user_role_admin: "🛡 Администратор"
+  btn_access_list: "📋 Список пользователей"
+  btn_user_add: "➕ Добавить пользователя"
+  user_add_prompt: |
+    👤 Отправьте @username пользователя (без @) — попробую определить его ID.
+  user_add_placeholder: "@username или ID"
+  user_add_invalid: |
+    ❓ Не удалось распознать ни @username, ни числовой ID.
+
+    Ответьте на сообщение с запросом ещё раз — или вернитесь назад.
+  user_add_need_id: |
+    ❓ Telegram не сообщает ботам ID по @username.
+
+    Пришлите числовой ID (например, 123456789) или перешлите любое сообщение от этого пользователя. Можно также вернуться назад.
+  user_add_duplicate: "ℹ️ У этого пользователя уже есть доступ."
+  user_add_success: "✅ Доступ выдан: %s"
+  user_delete_prompt: "🗑 Удалить доступ для %s?"
+  user_delete_owner_forbidden: "⛔ Владельца нельзя удалить."
 
 plural:
   channel_new_count:

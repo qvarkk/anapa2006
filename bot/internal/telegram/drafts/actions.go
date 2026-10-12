@@ -3,7 +3,6 @@ package drafts
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"qq/anapa2006/internal/db"
 	"qq/anapa2006/internal/i18n"
@@ -56,7 +55,7 @@ func HandleCreate(st *store.Store) bot.HandlerFunc {
 			return
 		}
 
-		draft, err := createDraftWithMediaTx(ctx, update, st, post, media, post.RawText)
+		draft, err := createDraftWithMediaTx(ctx, st, post, media, post.RawText)
 		if err != nil {
 			slog.LogAttrs(
 				ctx, slog.LevelError,
@@ -382,17 +381,11 @@ func postWithMediaByID(
 
 func createDraftWithMediaTx(
 	ctx context.Context,
-	update *models.Update,
 	st *store.Store,
 	post *db.Post,
 	media []db.PostMedium,
 	draftText string,
 ) (*db.PostDraft, error) {
-	userID, _, ok := extract.Identity(update)
-	if !ok {
-		return nil, fmt.Errorf("extract identity")
-	}
-
 	tx, err := st.Conn.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -402,7 +395,7 @@ func createDraftWithMediaTx(
 	qtx := st.Queries.WithTx(tx)
 
 	draft, err := qtx.CreatePostDraft(ctx, db.CreatePostDraftParams{
-		PostID: post.ID, FinalText: draftText, UserID: userID,
+		PostID: post.ID, FinalText: draftText,
 	})
 	if err != nil {
 		return nil, err

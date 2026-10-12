@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS post_media (
 CREATE TABLE IF NOT EXISTS post_drafts (
   post_id INTEGER PRIMARY KEY,
   final_text TEXT NOT NULL,
-  user_id INTEGER NOT NULL REFERENCES allowed_users(user_id),
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
@@ -68,8 +67,9 @@ CREATE TABLE IF NOT EXISTS pending_replies (
   chat_id INTEGER NOT NULL,
   prompt_message_id INTEGER NOT NULL,
   action TEXT NOT NULL
-    CHECK (action IN ('awaiting_text', 'awaiting_schedule')),
-  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    CHECK (action IN ('awaiting_text', 'awaiting_schedule', 'awaiting_channel_handle', 'awaiting_user_ref')),
+  -- NULL for prompts that are not about a post
+  post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
   origin TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (chat_id, prompt_message_id)

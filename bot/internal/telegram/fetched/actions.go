@@ -36,7 +36,11 @@ func HandleArchive(st *store.Store) bot.HandlerFunc {
 func HandleDelete(st *store.Store) bot.HandlerFunc {
 	return handlePostAction(func(ctx context.Context, postID int64) error {
 		return st.WithTx(ctx, func(q *db.Queries) error {
-			// post_media has no ON DELETE CASCADE, so it is removed explicitly.
+			// draft_media.origin_media_id references post_media without a
+			// cascade, so the draft has to go before the media it copied.
+			if err := q.DeleteDraft(ctx, postID); err != nil {
+				return err
+			}
 			if err := q.DeletePostMedia(ctx, postID); err != nil {
 				return err
 			}

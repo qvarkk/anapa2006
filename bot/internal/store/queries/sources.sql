@@ -15,3 +15,18 @@ LIMIT ? OFFSET ?;
 
 -- name: CountSources :one
 SELECT COUNT(*) FROM sources;
+
+-- name: ListSources :many
+SELECT * FROM sources ORDER BY channel_handle ASC LIMIT ? OFFSET ?;
+
+-- name: GetSourceByID :one
+SELECT * FROM sources WHERE id = ?;
+
+-- name: GetSourceByHandle :one
+SELECT * FROM sources WHERE channel_handle = ?;
+
+-- name: ToggleSourceActive :exec
+UPDATE sources SET active = 1 - active WHERE id = ?;
+
+-- name: DeleteSource :exec
+DELETE FROM sources WHERE id = ?;

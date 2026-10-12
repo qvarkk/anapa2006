@@ -20,6 +20,39 @@ const (
 
 	Fetched = "menu:fetched"
 
+	// Channel management
+	ChannelsMenu = "ch:menu"
+	// ch:list:<page>
+	ChannelsListPrefix = "ch:list:"
+	ChannelsList       = ChannelsListPrefix + "%d"
+	// ch:add:<prev_callback>
+	ChannelsAddPrefix = "ch:add:"
+	ChannelsAdd       = ChannelsAddPrefix + "%s"
+	// ch:tg:<source_id>:<page>
+	ChannelsTogglePrefix = "ch:tg:"
+	ChannelsToggle       = ChannelsTogglePrefix + "%d:%d"
+	// ch:rmp:<source_id>:<prev_callback>
+	ChannelsDeletePromptPrefix = "ch:rmp:"
+	ChannelsDeletePrompt       = ChannelsDeletePromptPrefix + "%d:%s"
+	// ch:rm:<source_id>:<page>
+	ChannelsDeletePrefix = "ch:rm:"
+	ChannelsDelete       = ChannelsDeletePrefix + "%d:%d"
+
+	// Access management
+	AccessMenu = "acc:menu"
+	// acc:list:<page>
+	AccessListPrefix = "acc:list:"
+	AccessList       = AccessListPrefix + "%d"
+	// acc:add:<prev_callback>
+	AccessAddPrefix = "acc:add:"
+	AccessAdd       = AccessAddPrefix + "%s"
+	// acc:rmp:<user_id>:<prev_callback>
+	AccessDeletePromptPrefix = "acc:rmp:"
+	AccessDeletePrompt       = AccessDeletePromptPrefix + "%d:%s"
+	// acc:rm:<user_id>:<page>
+	AccessDeletePrefix = "acc:rm:"
+	AccessDelete       = AccessDeletePrefix + "%d:%d"
+
 	// lat:<page>
 	FetchedLatestPrefix = "lat:"
 	FetchedLatest       = FetchedLatestPrefix + "%d"

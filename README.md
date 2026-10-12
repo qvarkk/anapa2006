@@ -24,4 +24,4 @@ This bot depends on [RSSHub](https://docs.rsshub.app/) for fetching source chann
 > Then specify link to it in the `.env` config with the `RSSHUB_BASE_URL` variable.
 
 > [!NOTE]
-> The schema is applied with `CREATE TABLE IF NOT EXISTS`. When the bot refuses to start with an "outdated database schema" error, delete the database file (or the docker volume) and start again.
+> Database schema changes are applied automatically on startup as versioned migrations (see `bot/internal/store/migrations`). Each migration runs exactly once, tracked in the `schema_migrations` table; no manual steps are needed.

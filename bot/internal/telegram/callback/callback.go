@@ -163,8 +163,11 @@ const (
 	DraftShow       = DraftShowPrefix + "%d:%s"
 
 	// media editor
-	// draft:m:<post_id>:<prev_callback>
-	DraftMediaListPrefix = "draft:m:"
+	// NOTE: the list prefix must NOT be "draft:m:" because that is also a prefix
+	// of draft:m:v:/draft:m:d:/draft:m:s:/draft:m:a:, which would shadow them in
+	// prefix-matched handler registration.
+	// draft:ml:<post_id>:<prev_callback>
+	DraftMediaListPrefix = "draft:ml:"
 	DraftMediaList       = DraftMediaListPrefix + "%d:%s"
 	// draft:m:v:<post_id>:<media_id>:<prev_callback>
 	DraftMediaDetailPrefix = "draft:m:v:"

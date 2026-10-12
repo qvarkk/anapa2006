@@ -3,19 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"qq/anapa2006/internal/db"
-	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-//go:embed schema.sql
-var schemaSQL string
 
 type Store struct {
 	*db.Queries
@@ -56,11 +51,8 @@ func Open(path string) (*Store, error) {
 	if err := conn.Ping(); err != nil {
 		return nil, fmt.Errorf("store: ping %s: %w", dsn, err)
 	}
-	if _, err := conn.Exec(schemaSQL); err != nil {
-		return nil, fmt.Errorf("store: apply schema: %w", err)
-	}
 
-	if err := verifySchema(conn); err != nil {
+	if err := applyMigrations(conn); err != nil {
 		conn.Close()
 		return nil, err
 	}
@@ -68,54 +60,7 @@ func Open(path string) (*Store, error) {
 	return &Store{
 		Queries: db.New(conn),
 		Conn:    conn,
-	}, err
-}
-
-// verifySchema rejects databases created before a schema change. The schema is
-// applied with CREATE TABLE IF NOT EXISTS, so an existing database silently keeps
-// its old shape; without this check the mismatch surfaces later as a confusing
-// constraint or foreign key error.
-func verifySchema(conn *sql.DB) error {
-	checks := []struct {
-		table   string
-		marker  string
-		present bool // whether the marker must appear in the stored DDL
-	}{
-		{"pending_replies", "awaiting_channel_handle", true},
-		{"pending_replies", "awaiting_media_add", true},
-		{"post_drafts", "user_id", false},
-		{"post_drafts", "target_channel_id", true},
-		{"schedule", "target_chat_id", false},
-		{"schedule", "sent_message_id", true},
-		{"target_channels", "chat_id", true},
-	}
-
-	for _, c := range checks {
-		var ddl string
-		err := conn.QueryRow(
-			`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?`, c.table,
-		).Scan(&ddl)
-		if err != nil {
-			return fmt.Errorf("store: read schema of table %q: %w", c.table, err)
-		}
-
-		if strings.Contains(ddl, c.marker) != c.present {
-			return fmt.Errorf(
-				"store: outdated database schema: table %q does not match the current schema (%q must be %s); "+
-					"delete the database file (or the docker volume) and start again",
-				c.table, c.marker, presentLabel(c.present),
-			)
-		}
-	}
-
-	return nil
-}
-
-func presentLabel(present bool) string {
-	if present {
-		return "present"
-	}
-	return "absent"
+	}, nil
 }
 
 func (s *Store) Close() error {
